@@ -22,7 +22,8 @@ endfunction
 
 " By default we will search for the following
 " => user defined prettier cli path from vim configuration file
-" => locally installed prettier inside node_modules on any parent folder
+" => locally installed prettier from current buffer's parent folders
+" => locally installed prettier from Vim cwd parent folders
 " => globally installed prettier
 " => vim-prettier prettier installation
 " => if all fails suggest install
@@ -30,6 +31,17 @@ function! prettier#resolver#executable#getPath() abort
   let l:user_defined_exec_path = fnamemodify(g:prettier#exec_cmd_path, ':p')
   if executable(l:user_defined_exec_path)
     return l:user_defined_exec_path
+  endif
+
+  let l:bufferPath = expand('%:p')
+  if l:bufferPath !=# ''
+    let l:bufferDir = fnamemodify(l:bufferPath, ':h')
+    if isdirectory(l:bufferDir)
+      let l:bufferLocalExec = s:ResolveExecutable(l:bufferDir)
+      if executable(l:bufferLocalExec)
+        return fnameescape(l:bufferLocalExec)
+      endif
+    endif
   endif
 
   let l:localExec = s:ResolveExecutable(getcwd())
@@ -61,8 +73,7 @@ function! s:GetExecPath(...) abort
   endif
 endfunction
 
-" Searches for the existence of a directory accross 
-" ancestral parents
+" Searches ancestral node_modules directories for an executable prettier.
 function! s:TraverseAncestorDirSearch(rootDir) abort
   let l:root = a:rootDir
   let l:dir = 'node_modules'
@@ -70,7 +81,10 @@ function! s:TraverseAncestorDirSearch(rootDir) abort
   while 1
     let l:searchDir = l:root . '/' . l:dir
     if isdirectory(l:searchDir)
-      return l:searchDir
+      let l:exec = s:GetExecPath(l:searchDir)
+      if executable(l:exec)
+        return l:exec
+      endif
     endif
 
     let l:parent = fnamemodify(l:root, ':h')
@@ -87,10 +101,7 @@ function! s:ResolveExecutable(...) abort
   let l:exec = "."
 
   if isdirectory(l:rootDir)
-    let l:dir = s:TraverseAncestorDirSearch(l:rootDir)
-    if l:dir != -1
-      let l:exec = s:GetExecPath(l:dir)
-    endif
+    let l:exec = s:TraverseAncestorDirSearch(l:rootDir)
   else
     let l:exec = s:GetExecPath()
   endif

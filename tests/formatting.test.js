@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const HeadlessRemoteClient = require('vim-driver/dist/HeadlessRemoteClient');
 const Server = require('vim-driver/dist/Server');
@@ -9,6 +10,7 @@ const FIXTURES_DIR = `${__dirname}/fixtures`;
 const VIMRC = `${__dirname}/vimrc`;
 const FORMAT_FIXTURE_LANE = process.env.PRETTIER_FORMATTING_FIXTURE_LANE || 'all';
 const QUARANTINED_FORMATTING_FIXTURES = new Set(['foo.lua', 'foo.rb']);
+const tempProjectRoots = [];
 
 const isSelectedFormattingFixture = file => {
   if (FORMAT_FIXTURE_LANE === 'known-passing') {
@@ -45,6 +47,66 @@ const getBufferContents = async remote =>
   (await remote.call('getline', [1, '$'])).join('\n');
 
 const vimString = value => `'${value.replace(/'/g, "''")}'`;
+
+const removeDirectorySync = dir => {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  fs.readdirSync(dir).forEach(entry => {
+    const entryPath = path.join(dir, entry);
+
+    if (fs.lstatSync(entryPath).isDirectory()) {
+      removeDirectorySync(entryPath);
+    } else {
+      fs.unlinkSync(entryPath);
+    }
+  });
+
+  fs.rmdirSync(dir);
+};
+
+const cleanupTempProjects = () => {
+  while (tempProjectRoots.length > 0) {
+    removeDirectorySync(tempProjectRoots.pop());
+  }
+};
+
+const writeFakePrettierExecutable = prettierPath => {
+  fs.writeFileSync(
+    prettierPath,
+    [
+      '#!/bin/sh',
+      'if [ "$1" = "--version" ]; then',
+      "  printf '3.0.3\\n'",
+      'fi',
+      'exit 0',
+    ].join('\n') + '\n'
+  );
+  fs.chmodSync(prettierPath, 0o755);
+};
+
+const createProjectLocalPrettierFixture = extension => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vim-prettier-local-'));
+  const binDir = path.join(root, 'node_modules', '.bin');
+  const sourceDir = path.join(root, 'src', 'nested');
+  const prettierPath = path.join(binDir, 'prettier');
+  const sourcePath = path.join(sourceDir, `index.${extension}`);
+
+  tempProjectRoots.push(root);
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.mkdirSync(sourceDir, { recursive: true });
+  writeFakePrettierExecutable(prettierPath);
+  fs.writeFileSync(
+    sourcePath,
+    extension === 'php' ? "<?php\n$foo = 'bar';\n" : "const foo = 'bar';\n"
+  );
+
+  return { root, prettierPath, sourcePath };
+};
+
+const setVimCwd = dir =>
+  remote.execute(`execute 'cd' fnameescape(${vimString(dir)})`);
 
 const resolveConfigFlags = config =>
   remote.eval(`prettier#resolver#config#resolve(${config}, 0, 1, 1)`);
@@ -148,18 +210,22 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  if (remote.isConnected()) {
-    try {
-      const filename = await remote.call('expand', ['%:p']);
+  try {
+    if (remote.isConnected()) {
+      try {
+        const filename = await remote.call('expand', ['%:p']);
 
-      if (filename) {
-        // restore the file
-        await remote.execute('earlier 1d | noautocmd | write');
+        if (filename) {
+          // restore the file
+          await remote.execute('earlier 1d | noautocmd | write');
+        }
+      } catch (e) {
+      } finally {
+        await remote.close();
       }
-    } catch (e) {
-    } finally {
-      await remote.close();
     }
+  } finally {
+    cleanupTempProjects();
   }
 });
 
@@ -254,6 +320,95 @@ if (FORMAT_FIXTURE_LANE === 'all') {
           'let g:prettier#config#plugins = g:prettier_test_plugins | unlet g:prettier_test_plugins'
         );
       }
+    });
+  });
+
+  describe('Prettier config project-local Prettier behavior', () => {
+    test('finds project-local Prettier from the buffer tree before Vim cwd', async () => {
+      const project = createProjectLocalPrettierFixture('js');
+
+      await setVimCwd(__dirname);
+      await remote.edit(project.sourcePath);
+
+      const cwd = await remote.eval('getcwd()');
+      const resolvedPath = await remote.eval(
+        'prettier#resolver#executable#getPath()'
+      );
+
+      expect(path.resolve(cwd)).toBe(path.resolve(__dirname));
+      expect(path.resolve(cwd)).not.toBe(path.resolve(project.root));
+      expect(resolvedPath).toBe(project.prettierPath);
+    });
+
+    test('continues past nested node_modules without Prettier', async () => {
+      const project = createProjectLocalPrettierFixture('js');
+      const nestedPackageDir = path.join(project.root, 'packages', 'app');
+      const nestedSourceDir = path.join(nestedPackageDir, 'src');
+      const nestedSourcePath = path.join(nestedSourceDir, 'index.js');
+
+      fs.mkdirSync(path.join(nestedPackageDir, 'node_modules'), {
+        recursive: true,
+      });
+      fs.mkdirSync(nestedSourceDir, { recursive: true });
+      fs.writeFileSync(nestedSourcePath, "const nested = 'value';\n");
+
+      await setVimCwd(__dirname);
+      await remote.edit(nestedSourcePath);
+
+      const resolvedPath = await remote.eval(
+        'prettier#resolver#executable#getPath()'
+      );
+
+      expect(resolvedPath).toBe(project.prettierPath);
+    });
+
+    test('keeps user-defined Prettier path precedence over buffer-local Prettier', async () => {
+      const project = createProjectLocalPrettierFixture('js');
+      const overrideDir = path.join(project.root, 'override-bin');
+      const overridePath = path.join(overrideDir, 'prettier');
+
+      fs.mkdirSync(overrideDir);
+      writeFakePrettierExecutable(overridePath);
+
+      await remote.execute(
+        `let g:prettier#exec_cmd_path = ${vimString(overridePath)}`
+      );
+
+      try {
+        await setVimCwd(__dirname);
+        await remote.edit(project.sourcePath);
+
+        const resolvedPath = await remote.eval(
+          'prettier#resolver#executable#getPath()'
+        );
+
+        expect(resolvedPath).toBe(overridePath);
+      } finally {
+        await remote.execute('let g:prettier#exec_cmd_path = 0');
+      }
+    });
+
+    test('does not inject bundled PHP plugin for project-local Prettier', async () => {
+      const project = createProjectLocalPrettierFixture('php');
+
+      await setVimCwd(__dirname);
+      await remote.edit(project.sourcePath);
+
+      const resolvedPath = await remote.eval(
+        'prettier#resolver#executable#getPath()'
+      );
+      const hasBundledPlugins = await remote.eval(
+        "exists('b:prettier_ft_default_args') && has_key(b:prettier_ft_default_args, 'bundledPlugins') && len(b:prettier_ft_default_args.bundledPlugins) > 0"
+      );
+      const bundledPluginPath = await remote.eval(
+        "get(b:prettier_ft_default_args, 'bundledPlugins', [''])[0]"
+      );
+      const flags = await resolveConfigFlags('b:prettier_ft_default_args');
+
+      expect(resolvedPath).toBe(project.prettierPath);
+      expect(hasBundledPlugins).toBe(1);
+      expect(flags).not.toContain(bundledPluginPath);
+      expectNoPluginFlags(flags);
     });
   });
 }

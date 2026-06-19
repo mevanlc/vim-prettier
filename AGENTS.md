@@ -126,6 +126,9 @@ plugin versions:
 - Added targeted config resolver tests for `g:prettier#config#plugins` and made
   the smoke lane run config resolver tests, not only the original Vim 9
   regression.
+- Added project-local Prettier resolver tests proving buffer-tree lookup wins
+  over Vim cwd lookup and bundled PHP plugin injection is skipped for
+  project-local Prettier outside this checkout.
 
 ## Review Findings After b538e29
 
@@ -179,7 +182,7 @@ plugin versions:
 - [x] Add explicit plugin argument support for PHP/XML bundled fallback tests.
 - [x] Add targeted plugin config tests for `g:prettier#config#plugins`, including
   string, list, empty, invalid, and paths with spaces.
-- [ ] Add project-local Prettier tests proving bundled plugin injection does not
+- [x] Add project-local Prettier tests proving bundled plugin injection does not
   override local Prettier/plugins.
 - [ ] Validate core Prettier language fixtures on Prettier 2.8.8 and 3.x.
 - [ ] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
@@ -192,7 +195,7 @@ plugin versions:
 
 ### Stage 3: Command and Resolver Hardening
 
-- [ ] Fix resolver to search for Prettier from the buffer's file tree, not only
+- [x] Fix resolver to search for Prettier from the buffer's file tree, not only
   `getcwd()`.
 - [ ] Avoid mutating buffer filetype defaults when merging overrides.
 - [ ] Make command construction shell-safe for spaces, quotes, and Windows.
