@@ -59,7 +59,7 @@ function! prettier#Prettier(...) abort
 
   let l:overWrite = a:0 > 4 ? a:5 : {}
   let l:bufferConfig = getbufvar(bufnr('%'), 'prettier_ft_default_args', {})
-  let l:config = extend(l:bufferConfig, l:overWrite)
+  let l:config = extend(copy(l:bufferConfig), l:overWrite)
 
   if l:execCmd != -1
     " TODO

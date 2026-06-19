@@ -242,6 +242,25 @@ if (FORMAT_FIXTURE_LANE === 'all') {
     ).resolves.toBeDefined();
   });
 
+  test('Prettier config overrides do not mutate buffer filetype defaults', async () => {
+    await remote.edit(`${FIXTURES_DIR}/foo.css`);
+    await remote.execute('let b:prettier_test_original_args = deepcopy(b:prettier_ft_default_args)');
+
+    try {
+      await remote.execute(
+        "call prettier#Prettier(0, 1, line('$'), 0, {'singleQuote': 'false'})"
+      );
+
+      const defaultsUnchanged = await remote.eval(
+        'b:prettier_ft_default_args ==# b:prettier_test_original_args'
+      );
+
+      expect(defaultsUnchanged).toBe(1);
+    } finally {
+      await remote.execute('unlet b:prettier_test_original_args');
+    }
+  });
+
   describe('Prettier config plugins flags', () => {
     test('ignores empty string plugin config', async () => {
       const flags = await resolveConfigFlags(`{'plugins': ''}`);

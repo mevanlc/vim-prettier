@@ -197,7 +197,7 @@ plugin versions:
 
 - [x] Fix resolver to search for Prettier from the buffer's file tree, not only
   `getcwd()`.
-- [ ] Avoid mutating buffer filetype defaults when merging overrides.
+- [x] Avoid mutating buffer filetype defaults when merging overrides.
 - [ ] Make command construction shell-safe for spaces, quotes, and Windows.
 - [ ] Prefer argv-list job/system APIs where Vim/Neovim support allows.
 - [ ] Expand config-file discovery for modern Prettier config names.
