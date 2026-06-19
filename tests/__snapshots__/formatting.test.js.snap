@@ -20,35 +20,35 @@ exports[`Prettier formats foo.css file with :PrettierAsync command 1`] = `
 
 exports[`Prettier formats foo.graphql file with :Prettier command 1`] = `
 "{
-    baz {
-        blah
-        ...name
-    }
-    bean {
-        foo
-        blah
-        bleh
-    }
-    bar {
-        ...name
-    }
+  baz {
+    blah
+    ...name
+  }
+  bean {
+    foo
+    blah
+    bleh
+  }
+  bar {
+    ...name
+  }
 }"
 `;
 
 exports[`Prettier formats foo.graphql file with :PrettierAsync command 1`] = `
 "{
-    baz {
-        blah
-        ...name
-    }
-    bean {
-        foo
-        blah
-        bleh
-    }
-    bar {
-        ...name
-    }
+  baz {
+    blah
+    ...name
+  }
+  bean {
+    foo
+    blah
+    bleh
+  }
+  bar {
+    ...name
+  }
 }"
 `;
 
@@ -162,16 +162,16 @@ Lorem ipsum dolor amet
 
 exports[`Prettier formats foo.php file with :Prettier command 1`] = `
 "<?php
-$a = 'a';
+$a = \\"a\\";
 
-$b = $a . $a . ' asda';"
+$b = $a . $a . \\" asda\\";"
 `;
 
 exports[`Prettier formats foo.php file with :PrettierAsync command 1`] = `
 "<?php
-$a = 'a';
+$a = \\"a\\";
 
-$b = $a . $a . ' asda';"
+$b = $a . $a . \\" asda\\";"
 `;
 
 exports[`Prettier formats foo.rb file with :Prettier command 1`] = `
@@ -188,19 +188,19 @@ end"
 
 exports[`Prettier formats foo.scss file with :Prettier command 1`] = `
 ".redClass {
-    background: \\"red\\";
+  background: \\"red\\";
 }
 #redId {
-    background: \\"red\\";
+  background: \\"red\\";
 }"
 `;
 
 exports[`Prettier formats foo.scss file with :PrettierAsync command 1`] = `
 ".redClass {
-    background: \\"red\\";
+  background: \\"red\\";
 }
 #redId {
-    background: \\"red\\";
+  background: \\"red\\";
 }"
 `;
 
@@ -225,7 +225,7 @@ exports[`Prettier formats foo.vue file with :Prettier command 1`] = `
 export default {
     data() {
         return { msg: \\"Hello world!\\" };
-    }
+    },
 };
 </script>
 
@@ -249,7 +249,7 @@ exports[`Prettier formats foo.vue file with :PrettierAsync command 1`] = `
 export default {
     data() {
         return { msg: \\"Hello world!\\" };
-    }
+    },
 };
 </script>
 
@@ -310,20 +310,20 @@ exports[`Prettier formats foo.xml file with :PrettierAsync command 1`] = `
 
 exports[`Prettier formats foo.yaml file with :Prettier command 1`] = `
 "foo:
-    bar:
-        baz:
-            bleh: ./foo
-            foobar: foobar
-            args:
-                buildno: 1"
+  bar:
+    baz:
+      bleh: ./foo
+      foobar: foobar
+      args:
+        buildno: 1"
 `;
 
 exports[`Prettier formats foo.yaml file with :PrettierAsync command 1`] = `
 "foo:
-    bar:
-        baz:
-            bleh: ./foo
-            foobar: foobar
-            args:
-                buildno: 1"
+  bar:
+    baz:
+      bleh: ./foo
+      foobar: foobar
+      args:
+        buildno: 1"
 `;

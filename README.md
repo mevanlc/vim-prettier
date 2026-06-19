@@ -260,6 +260,10 @@ let g:prettier#config#use_tabs = 'auto'
 " default: ''
 let g:prettier#config#parser = ''
 
+" Prettier plugin paths to load. Accepts a string or list of strings.
+" default: []
+let g:prettier#config#plugins = []
+
 " cli-override|file-override|prefer-file
 " default: 'file-override'
 let g:prettier#config#config_precedence = 'file-override'

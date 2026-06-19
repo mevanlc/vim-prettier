@@ -79,6 +79,9 @@ let g:prettier#config#use_tabs = get(g:,'prettier#config#use_tabs', 'auto')
 " See more: https://prettier.io/docs/en/options.html#parser
 let g:prettier#config#parser = get(g:,'prettier#config#parser', '')
 
+" Prettier plugin paths to load. Accepts a string or list of strings.
+let g:prettier#config#plugins = get(g:, 'prettier#config#plugins', [])
+
 " cli-override|file-override|prefer-file
 " default: 'file-override'
 " See more: https://prettier.io/docs/en/cli.html#--config-precedence

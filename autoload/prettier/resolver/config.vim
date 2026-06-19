@@ -106,6 +106,44 @@ function! s:Flag_parser(config_and_sel, ...) abort
   endif
 endfunction
 
+" Returns repeated '--plugin=PLUGIN' args or ''.
+function! s:Flag_plugins(config_and_sel, ...) abort
+  let l:value = get(
+          \ a:config_and_sel.config,
+          \ 'plugins',
+          \ get(g:, 'prettier#config#plugins', []))
+
+  if type(l:value) == type('')
+    let l:plugins = l:value ==# '' ? [] : [l:value]
+  elseif type(l:value) == type([])
+    let l:plugins = copy(l:value)
+  else
+    return ''
+  endif
+
+  if prettier#resolver#executable#isUnderPluginRoot(
+          \ prettier#resolver#executable#getPath())
+    let l:bundled_value = get(a:config_and_sel.config, 'bundledPlugins', [])
+
+    if type(l:bundled_value) == type('')
+      if l:bundled_value !=# ''
+        call add(l:plugins, l:bundled_value)
+      endif
+    elseif type(l:bundled_value) == type([])
+      call extend(l:plugins, l:bundled_value)
+    endif
+  endif
+
+  let l:flags = []
+  for l:plugin in l:plugins
+    if type(l:plugin) == type('') && l:plugin !=# ''
+      call add(l:flags, '--plugin=' . shellescape(l:plugin))
+    endif
+  endfor
+
+  return join(l:flags, ' ')
+endfunction
+
 " Returns '--stdin-filepath=' concatenated with the full path of the opened
 " file.
 function! s:Flag_stdin_filepath(...) abort
@@ -160,6 +198,11 @@ let s:FLAGS = {
         \   'json_name': 'parser',
         \   'global_name': 'parser',
         \   'mapper': function('s:Flag_parser')},
+        \ '--plugin': {
+        \   'json_name': 'plugins',
+        \   'global_name': 'plugins',
+        \   'mapper': function('s:Flag_plugins'),
+        \   'since': '1.10.0'},
         \ '--range-start': {
         \   'json_name': '',
         \   'global_name': '',

@@ -1,4 +1,24 @@
 let s:ROOT_DIR = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+let s:PLUGIN_ROOT_DIR = fnamemodify(s:ROOT_DIR, ':h:h:h')
+
+function! s:NormalizePath(path) abort
+  let l:path = substitute(a:path, '\\ ', ' ', 'g')
+  return substitute(resolve(fnamemodify(l:path, ':p')), '\\', '/', 'g')
+endfunction
+
+function! prettier#resolver#executable#isUnderPluginRoot(path) abort
+  if type(a:path) != type('') || a:path ==# ''
+    return 0
+  endif
+
+  if a:path !~# '^\(/\|[A-Za-z]:[/\\]\)'
+    return 0
+  endif
+
+  let l:plugin_root = s:NormalizePath(s:PLUGIN_ROOT_DIR)
+  let l:path = s:NormalizePath(a:path)
+  return l:path ==# l:plugin_root || stridx(l:path, l:plugin_root . '/') ==# 0
+endfunction
 
 " By default we will search for the following
 " => user defined prettier cli path from vim configuration file

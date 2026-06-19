@@ -9,7 +9,8 @@
     "url": "git://github.com/prettier/vim-prettier.git"
   },
   "scripts": {
-    "test": "vim --version && LOG_LEVEL=error jest",
+    "test": "node scripts/vim-version.js && LOG_LEVEL=error jest",
+    "test:smoke": "node scripts/vim-version.js && LOG_LEVEL=error jest tests/formatting.test.js --runInBand --testNamePattern=\"Prettier config version detection works inside vim-driver execute\"",
     "lint": "vint --version && vint ."
   },
   "dependencies": {

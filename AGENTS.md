@@ -107,6 +107,17 @@ plugin versions:
   stored snapshots under the current Prettier 3.0.3 toolchain.
 - Remaining external plugin failures are no-op formatting for Lua, PHP, Ruby,
   and XML, consistent with stale or unresolved bundled parser plugins.
+- Added an initial GitHub Actions smoke workflow. It runs the Vim 9 config
+  version regression as a blocking check and runs the full formatting suite as
+  non-blocking discovery until plugin compatibility is restored.
+- Updated targeted Prettier 3.0.3 snapshots for GraphQL, SCSS, Vue, and YAML
+  after confirming those were core formatter deltas.
+- Added explicit `plugins` CLI config support and scoped automatic bundled
+  plugin loading for PHP and XML to Prettier executables under this checkout.
+  PHP and XML fixture tests now pass with the current bundled packages.
+- Lua and Ruby fixture tests still fail as no-op formatting. Current bundled Lua
+  and Ruby plugin versions are not viable Prettier 3 targets and need separate
+  support decisions before being advertised.
 
 ## Work Stages
 
@@ -121,6 +132,8 @@ plugin versions:
 
 ### Stage 1: Define Reproducible Tooling
 
+- [x] Add an initial CI smoke workflow for the known Vim 9 regression and
+  non-blocking full-suite discovery.
 - [ ] Add CI with an editor and Prettier compatibility matrix.
 - [ ] Decide whether lint runs from a pinned container or installable local deps.
 - [ ] Replace or deprecate the current Dockerfile path.
@@ -128,6 +141,9 @@ plugin versions:
 
 ### Stage 2: Prettier and Plugin Compatibility
 
+- [x] Update classified Prettier 3.0.3 core snapshots for GraphQL, SCSS, Vue,
+  and YAML without changing plugin-language snapshots broadly.
+- [x] Add explicit plugin argument support for PHP/XML bundled fallback tests.
 - [ ] Validate core Prettier language fixtures on Prettier 2.8.8 and 3.x.
 - [ ] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
 - [ ] Decide whether bundled plugin support remains in scope.
