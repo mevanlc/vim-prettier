@@ -98,7 +98,7 @@ endfunction
 
 function! s:ResolveExecutable(...) abort
   let l:rootDir = a:0 > 0 ? a:1 : 0
-  let l:exec = "."
+  let l:exec = '.'
 
   if isdirectory(l:rootDir)
     let l:exec = s:TraverseAncestorDirSearch(l:rootDir)

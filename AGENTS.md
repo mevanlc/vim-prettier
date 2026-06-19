@@ -85,8 +85,8 @@ plugin versions:
   `E930: Cannot use :redir inside execute()`, caused by version detection in
   `autoload/prettier/resolver/config.vim` calling `prettier#PrettierCli()` under
   `redir`.
-- `yarn lint` is not reproducible locally because `vint` is expected on `PATH`
-  but is not declared in npm dependencies.
+- `yarn lint` now uses pinned local Python requirements and a checkout-local
+  virtualenv wrapper for `vim-vint`, rather than relying on global `vint`.
 - No GitHub Actions workflow currently defines a compatibility matrix.
 - The Dockerfile is old and uses Alpine 3.8 plus unpinned `testbed/vim:latest`.
 - Docs and runtime filetype support have drifted.
@@ -129,6 +129,8 @@ plugin versions:
 - Added project-local Prettier resolver tests proving buffer-tree lookup wins
   over Vim cwd lookup and bundled PHP plugin injection is skipped for
   project-local Prettier outside this checkout.
+- `yarn lint` now uses pinned local Python requirements and a checkout-local
+  virtualenv wrapper for `vim-vint`, and CI runs it as a blocking job.
 
 ## Review Findings After b538e29
 
@@ -146,8 +148,8 @@ plugin versions:
   viable Prettier 3 targets.
 - Svelte remains an unmeasured plugin-language gap despite being documented and
   bundled.
-- Lint/tooling reproducibility is still incomplete because `vint` is missing,
-  Node/Yarn expectations are not pinned or documented, and CI still lacks an
+- Lint/tooling reproducibility is still incomplete because Node/Yarn
+  expectations are not pinned or documented, and CI still lacks an
   editor/Prettier matrix beyond the current Ubuntu Vim lanes.
 
 ## Work Stages
@@ -170,7 +172,7 @@ plugin versions:
 - [x] Harden CI with explicit Vim version/feature checks and `git diff --check`.
 - [ ] Add CI with an editor and Prettier compatibility matrix after smoke lanes
   are stable.
-- [ ] Resolve `vint` reproducibility through a pinned container or installable
+- [x] Resolve `vint` reproducibility through a pinned container or installable
   local deps.
 - [ ] Replace or deprecate the current Dockerfile path.
 - [ ] Document supported Node and Yarn/package-manager versions.

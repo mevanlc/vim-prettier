@@ -13,7 +13,7 @@
     "test:smoke": "node scripts/vim-version.js && LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=all jest tests/formatting.test.js --runInBand --testNamePattern=\"Prettier config\"",
     "test:formatting:passing": "node scripts/vim-version.js && LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=known-passing jest tests/formatting.test.js --runInBand",
     "test:formatting:quarantined": "node scripts/vim-version.js && LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=quarantined jest tests/formatting.test.js --runInBand",
-    "lint": "vint --version && vint ."
+    "lint": "sh scripts/vint.sh --version && sh scripts/vint.sh ."
   },
   "dependencies": {
     "@prettier/plugin-lua": "0.0.1",

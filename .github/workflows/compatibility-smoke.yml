@@ -25,6 +25,26 @@ jobs:
             git diff-tree --check --no-commit-id --root -r HEAD
           fi
 
+  lint:
+    name: Vimscript lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Python venv support
+        run: sudo apt-get update && sudo apt-get install -y python3-venv
+
+      - name: Run Vimscript lint
+        run: yarn lint
+
   smoke:
     name: Targeted Vim smoke check
     runs-on: ubuntu-latest
