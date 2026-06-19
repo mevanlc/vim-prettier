@@ -123,6 +123,9 @@ plugin versions:
   behind expected plugin-language failures.
 - CI now runs an explicit `vim --version` capability check for `+job` and
   `+channel` in the blocking Vim jobs, plus a blocking `git diff --check` job.
+- Added targeted config resolver tests for `g:prettier#config#plugins` and made
+  the smoke lane run config resolver tests, not only the original Vim 9
+  regression.
 
 ## Review Findings After b538e29
 
@@ -174,7 +177,7 @@ plugin versions:
 - [x] Update classified Prettier 3.0.3 core snapshots for GraphQL, SCSS, Vue,
   and YAML without changing plugin-language snapshots broadly.
 - [x] Add explicit plugin argument support for PHP/XML bundled fallback tests.
-- [ ] Add targeted plugin config tests for `g:prettier#config#plugins`, including
+- [x] Add targeted plugin config tests for `g:prettier#config#plugins`, including
   string, list, empty, invalid, and paths with spaces.
 - [ ] Add project-local Prettier tests proving bundled plugin injection does not
   override local Prettier/plugins.

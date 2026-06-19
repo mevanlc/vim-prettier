@@ -44,6 +44,17 @@ jest.setTimeout(15000);
 const getBufferContents = async remote =>
   (await remote.call('getline', [1, '$'])).join('\n');
 
+const vimString = value => `'${value.replace(/'/g, "''")}'`;
+
+const resolveConfigFlags = config =>
+  remote.eval(`prettier#resolver#config#resolve(${config}, 0, 1, 1)`);
+
+const expectNoPluginFlags = flags => {
+  expect(flags).not.toContain('--plugin=');
+};
+
+const countPluginFlags = flags => (flags.match(/--plugin=/g) || []).length;
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const waitUntil = (condition, timeout = 2000) => {
   return new Promise(resolve => {
@@ -163,6 +174,87 @@ if (FORMAT_FIXTURE_LANE === 'all') {
     await expect(
       remote.execute('call prettier#resolver#config#resolve({}, 0, 1, 1)')
     ).resolves.toBeDefined();
+  });
+
+  describe('Prettier config plugins flags', () => {
+    test('ignores empty string plugin config', async () => {
+      const flags = await resolveConfigFlags(`{'plugins': ''}`);
+
+      expectNoPluginFlags(flags);
+    });
+
+    test('ignores empty list plugin config', async () => {
+      const flags = await resolveConfigFlags(`{'plugins': []}`);
+
+      expectNoPluginFlags(flags);
+    });
+
+    test('adds a string plugin path', async () => {
+      const pluginPath = '/tmp/prettier-plugin-example.js';
+      const flags = await resolveConfigFlags(
+        `{'plugins': ${vimString(pluginPath)}}`
+      );
+
+      expect(flags).toContain(`--plugin='${pluginPath}'`);
+      expect(countPluginFlags(flags)).toBe(1);
+    });
+
+    test('adds a list of plugin paths', async () => {
+      const pluginPaths = [
+        '/tmp/prettier-plugin-one.js',
+        '/tmp/prettier-plugin-two.js',
+      ];
+      const flags = await resolveConfigFlags(
+        `{'plugins': [${pluginPaths.map(vimString).join(', ')}]}`
+      );
+
+      expect(flags).toContain(`--plugin='${pluginPaths[0]}'`);
+      expect(flags).toContain(`--plugin='${pluginPaths[1]}'`);
+      expect(countPluginFlags(flags)).toBe(2);
+    });
+
+    test('ignores invalid plugin config type', async () => {
+      const flags = await resolveConfigFlags(`{'plugins': 1}`);
+
+      expectNoPluginFlags(flags);
+    });
+
+    test('shellescapes plugin paths containing spaces', async () => {
+      const pluginPath = path.join(
+        FIXTURES_DIR,
+        'plugin path',
+        'prettier-plugin-example.js'
+      );
+      const flags = await resolveConfigFlags(
+        `{'plugins': ${vimString(pluginPath)}}`
+      );
+
+      expect(flags).toContain(`--plugin='${pluginPath}'`);
+      expect(countPluginFlags(flags)).toBe(1);
+    });
+
+    test('falls back to restored global plugin config', async () => {
+      const pluginPath = '/tmp/prettier-plugin-global.js';
+
+      await remote.execute(
+        'let g:prettier_test_plugins = deepcopy(g:prettier#config#plugins)'
+      );
+
+      try {
+        await remote.execute(
+          `let g:prettier#config#plugins = ${vimString(pluginPath)}`
+        );
+
+        const flags = await resolveConfigFlags('{}');
+
+        expect(flags).toContain(`--plugin='${pluginPath}'`);
+        expect(countPluginFlags(flags)).toBe(1);
+      } finally {
+        await remote.execute(
+          'let g:prettier#config#plugins = g:prettier_test_plugins | unlet g:prettier_test_plugins'
+        );
+      }
+    });
   });
 }
 
