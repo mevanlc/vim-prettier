@@ -16,9 +16,8 @@ Plug 'prettier/vim-prettier', {
 
 ---
 
-By default it will auto format **javascript**, **typescript**, **less**,
-**scss**, **css**, **json**, **graphql** and **markdown** files if they
-have/support the "@format" pragma annotation in the header of the file.
+By default it will auto format configured filetype patterns if they have/support
+the "@format" pragma annotation in the header of the file.
 
 ![vim-prettier](/media/vim-prettier.gif?raw=true 'vim-prettier')
 
@@ -40,16 +39,16 @@ Install with [vim-plug](https://github.com/junegunn/vim-plug), assumes node and
 yarn|npm installed globally.
 
 ```vim
-" post install (yarn install | npm install) then load plugin only for editing supported files
+" post install (yarn install | npm install) then load plugin only for measured files
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install --frozen-lockfile --production',
-  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'svelte', 'yaml', 'html'] }
+  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html', 'php', 'xml'] }
 ```
 
-or simply enable for all formats by:
+or load vim-prettier for every filetype by:
 
 ```vim
-" post install (yarn install | npm install) then load plugin only for editing supported files
+" post install (yarn install | npm install) then load plugin for every filetype
 Plug 'prettier/vim-prettier', { 'do': 'yarn install --frozen-lockfile --production' }
 ```
 
@@ -78,9 +77,22 @@ vim-prettier.
 vim-prettier executable resolution:
 
 1.  Look for user defined prettier cli path from vim configuration file
-2.  Traverse parents and search for Prettier installation inside `node_modules`
+2.  Traverse the current buffer's parents and search for Prettier installation inside `node_modules`
 3.  Look for a global prettier installation
 4.  Use locally installed vim-prettier prettier executable
+
+### Compatibility status
+
+Compatibility is being rebuilt from measured fixtures. Project-local Prettier,
+configuration, and plugins take precedence over vim-prettier's bundled fallback.
+
+Bundled plugin loading is currently measured for PHP and XML only when using the
+vim-prettier bundled Prettier. Lua and Ruby bundled formatting are quarantined
+and currently failing under the bundled Prettier 3 baseline. Svelte is detected
+and has a parser default, but it is not covered by blocking fixtures and the
+current bundled Svelte plugin path is not a Prettier 3 support guarantee. For
+Lua, Ruby, or Svelte today, use a project-local Prettier/plugin setup or the
+older `release/0.x` path if that matches your project.
 
 ### Prettier Stylelint
 
@@ -232,7 +244,7 @@ To run vim-prettier not only before saving, but also after changing text or leav
 " when running at every change you may want to disable quickfix
 let g:prettier#quickfix_enabled = 0
 
-autocmd TextChanged,InsertLeave *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md,*.vue,*.svelte,*.yaml,*.html PrettierAsync
+autocmd TextChanged,InsertLeave *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md,*.vue,*.yaml,*.html,*.php,*.xml PrettierAsync
 ```
 
 ### Overwrite default prettier configuration
@@ -261,6 +273,7 @@ let g:prettier#config#use_tabs = 'auto'
 let g:prettier#config#parser = ''
 
 " Prettier plugin paths to load. Accepts a string or list of strings.
+" Project-local Prettier installs should provide their own project-local plugins.
 " default: []
 let g:prettier#config#plugins = []
 

@@ -135,6 +135,10 @@ plugin versions:
   executable paths from the resolver and shellescaping executable and
   `--stdin-filepath` arguments at shell call sites. Windows and argv-list job
   APIs remain open.
+- Audited bundled parser-plugin viability for PHP, Ruby, XML, Lua, and Svelte.
+  Docs now scope measured bundled fallback support to PHP/XML, classify Lua/Ruby
+  bundled formatting as quarantined failing, and classify Svelte as detected but
+  unmeasured under the current Prettier 3 baseline.
 
 ## Review Findings After b538e29
 
@@ -191,10 +195,10 @@ plugin versions:
 - [x] Add project-local Prettier tests proving bundled plugin injection does not
   override local Prettier/plugins.
 - [ ] Validate core Prettier language fixtures on Prettier 2.8.8 and 3.x.
-- [ ] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
-- [ ] Decide Lua/Ruby/Svelte support policy together before advertising or
+- [x] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
+- [x] Decide Lua/Ruby/Svelte support policy together before advertising or
   removing any plugin-language support.
-- [ ] Decide whether bundled plugin support remains in scope.
+- [x] Decide whether bundled plugin support remains in scope.
 - [ ] If bundled plugins remain supported, add explicit plugin resolution without
   breaking project-local Prettier/plugin behavior.
 - [ ] Add or update fixtures for each supported plugin language.
