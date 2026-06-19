@@ -156,6 +156,22 @@ const createShellSafetyPrettierFixture = () => {
   return { root, prettierPath, sourcePath };
 };
 
+const createConfigDiscoveryFixture = configFileName => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vim-prettier-config-'));
+  const sourceDir = path.join(root, 'src', 'nested');
+  const sourcePath = path.join(sourceDir, 'index.js');
+
+  tempProjectRoots.push(root);
+  fs.mkdirSync(sourceDir, { recursive: true });
+  fs.writeFileSync(sourcePath, "const configDiscovery = 'value';\n");
+
+  if (configFileName) {
+    fs.writeFileSync(path.join(root, configFileName), 'export default {};\n');
+  }
+
+  return { root, sourcePath };
+};
+
 const setVimCwd = dir =>
   remote.execute(`execute 'cd' fnameescape(${vimStringExpr(dir)})`);
 
@@ -164,6 +180,9 @@ const editFile = file =>
 
 const resolveConfigFlags = config =>
   remote.eval(`prettier#resolver#config#resolve(${config}, 0, 1, 1)`);
+
+const isDefaultConfigPresent = () =>
+  remote.eval('prettier#IsConfigPresent(g:prettier#autoformat_config_files)');
 
 const expectNoPluginFlags = flags => {
   expect(flags).not.toContain('--plugin=');
@@ -482,6 +501,33 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       expect(hasBundledPlugins).toBe(1);
       expect(flags).not.toContain(bundledPluginPath);
       expectNoPluginFlags(flags);
+    });
+  });
+
+  describe('Prettier config file discovery', () => {
+    test('detects modern config names from the buffer project tree', async () => {
+      const project = createConfigDiscoveryFixture('prettier.config.mjs');
+
+      await setVimCwd(__dirname);
+      await editFile(project.sourcePath);
+
+      const cwd = await remote.eval('getcwd()');
+      const isConfigPresent = await isDefaultConfigPresent();
+
+      expect(path.resolve(cwd)).toBe(path.resolve(__dirname));
+      expect(path.resolve(cwd)).not.toBe(path.resolve(project.root));
+      expect(isConfigPresent).toBe(1);
+    });
+
+    test('does not detect missing config from the buffer project tree', async () => {
+      const project = createConfigDiscoveryFixture();
+
+      await setVimCwd(__dirname);
+      await editFile(project.sourcePath);
+
+      const isConfigPresent = await isDefaultConfigPresent();
+
+      expect(isConfigPresent).toBe(0);
     });
   });
 

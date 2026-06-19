@@ -195,16 +195,35 @@ let g:prettier#autoformat = 1
 let g:prettier#autoformat_require_pragma = 0
 ```
 
-Toggle the `g:prettier#autoformat` setting based on whether a config file can be found in the current directory or any parent directory. Note that this will override the `g:prettier#autoformat` setting!
+Toggle the `g:prettier#autoformat` setting based on whether a config file can be found in the buffer's directory or any parent directory. Note that this will override the `g:prettier#autoformat` setting!
 
 ```vim
 let g:prettier#autoformat_config_present = 1
 ```
 
-A list containing all config file names to search for when using the `g:prettier#autoformat_config_present` option.
+A list containing all config file names to search from the buffer's directory and parent directories when using the `g:prettier#autoformat_config_present` option. The default list follows Prettier's documented file-based config names and keeps vim-prettier's legacy `.prettierrc.config.js` entry. It intentionally does not include `package.json` or `package.yaml`, because those files only count as Prettier configs when they contain a `prettier` key. Detection only controls whether autoformat runs; the selected Prettier executable and Node version still determine whether a detected config format can be parsed.
 
 ```vim
-let g:prettier#autoformat_config_files = [...]
+let g:prettier#autoformat_config_files = [
+      \ '.prettierrc',
+      \ '.prettierrc.json',
+      \ '.prettierrc.yaml',
+      \ '.prettierrc.yml',
+      \ '.prettierrc.json5',
+      \ '.prettierrc.js',
+      \ '.prettierrc.mjs',
+      \ '.prettierrc.cjs',
+      \ '.prettierrc.ts',
+      \ '.prettierrc.mts',
+      \ '.prettierrc.cts',
+      \ 'prettier.config.js',
+      \ 'prettier.config.mjs',
+      \ 'prettier.config.cjs',
+      \ 'prettier.config.ts',
+      \ 'prettier.config.mts',
+      \ 'prettier.config.cts',
+      \ '.prettierrc.toml',
+      \ '.prettierrc.config.js']
 ```
 
 Set the prettier CLI executable path

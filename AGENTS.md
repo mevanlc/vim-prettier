@@ -212,7 +212,7 @@ plugin versions:
   `--stdin-filepath` paths containing spaces and quotes.
 - [ ] Finish command construction hardening for Windows.
 - [ ] Prefer argv-list job/system APIs where Vim/Neovim support allows.
-- [ ] Expand config-file discovery for modern Prettier config names.
+- [x] Expand config-file discovery for modern Prettier config names.
 
 ### Stage 4: Async Safety
 

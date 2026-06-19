@@ -26,15 +26,27 @@ let g:prettier#autoformat_require_pragma = get(g:, 'prettier#autoformat_require_
 " whether to turn autoformatting on if a prettier config file is found
 let g:prettier#autoformat_config_present = get(g:, 'prettier#autoformat_config_present', 0)
 
-" prettier config files to search current directory and parent directories for
+" prettier config files to search buffer directory and parent directories for
 let g:prettier#autoformat_config_files = get(g:, 'prettier#autoformat_config_files', [
       \'.prettierrc',
-      \'.prettierrc.yml',
-      \'.prettierrc.yaml',
-      \'.prettierrc.js',
-      \'.prettierrc.config.js',
       \'.prettierrc.json',
-      \'.prettierrc.toml'])
+      \'.prettierrc.yaml',
+      \'.prettierrc.yml',
+      \'.prettierrc.json5',
+      \'.prettierrc.js',
+      \'.prettierrc.mjs',
+      \'.prettierrc.cjs',
+      \'.prettierrc.ts',
+      \'.prettierrc.mts',
+      \'.prettierrc.cts',
+      \'prettier.config.js',
+      \'prettier.config.mjs',
+      \'prettier.config.cjs',
+      \'prettier.config.ts',
+      \'prettier.config.mts',
+      \'prettier.config.cts',
+      \'.prettierrc.toml',
+      \'.prettierrc.config.js'])
 
 " path to prettier cli
 let g:prettier#exec_cmd_path = get(g:, 'prettier#exec_cmd_path', 0)
