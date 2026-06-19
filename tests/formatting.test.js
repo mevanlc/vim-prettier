@@ -7,6 +7,24 @@ const HOST = '127.0.0.1';
 const PORT = 1337;
 const FIXTURES_DIR = `${__dirname}/fixtures`;
 const VIMRC = `${__dirname}/vimrc`;
+const FORMAT_FIXTURE_LANE = process.env.PRETTIER_FORMATTING_FIXTURE_LANE || 'all';
+const QUARANTINED_FORMATTING_FIXTURES = new Set(['foo.lua', 'foo.rb']);
+
+const isSelectedFormattingFixture = file => {
+  if (FORMAT_FIXTURE_LANE === 'known-passing') {
+    return !QUARANTINED_FORMATTING_FIXTURES.has(file);
+  }
+
+  if (FORMAT_FIXTURE_LANE === 'quarantined') {
+    return QUARANTINED_FORMATTING_FIXTURES.has(file);
+  }
+
+  if (FORMAT_FIXTURE_LANE === 'all') {
+    return true;
+  }
+
+  throw new Error(`Unknown PRETTIER_FORMATTING_FIXTURE_LANE: ${FORMAT_FIXTURE_LANE}`);
+};
 
 const shellQuote = value => `'${value.replace(/'/g, `'\\''`)}'`;
 
@@ -53,7 +71,9 @@ const waitUntil = (condition, timeout = 2000) => {
 
 const assertFormatting = (file) => {
   const filename = path.basename(file);
-  test(`Prettier formats ${filename} file with :Prettier command`, async () => {
+  const formattingTest = isSelectedFormattingFixture(file) ? test : test.skip;
+
+  formattingTest(`Prettier formats ${filename} file with :Prettier command`, async () => {
     await remote.edit(`${FIXTURES_DIR}/${file}`);
 
     const lines = await getBufferContents(remote);
@@ -70,7 +90,7 @@ const assertFormatting = (file) => {
     expect(updatedLines).toMatchSnapshot();
   });
 
-  test(`Prettier formats ${filename} file with :PrettierAsync command`, async () => {
+  formattingTest(`Prettier formats ${filename} file with :PrettierAsync command`, async () => {
     await remote.edit(`${FIXTURES_DIR}/${file}`);
 
     const lines = await getBufferContents(remote);
@@ -137,12 +157,14 @@ afterEach(async () => {
 //  expect(result).toMatchSnapshot();
 //});
 
-test('Prettier config version detection works inside vim-driver execute', async () => {
-  await remote.edit(`${FIXTURES_DIR}/foo.js`);
-  await expect(
-    remote.execute('call prettier#resolver#config#resolve({}, 0, 1, 1)')
-  ).resolves.toBeDefined();
-});
+if (FORMAT_FIXTURE_LANE === 'all') {
+  test('Prettier config version detection works inside vim-driver execute', async () => {
+    await remote.edit(`${FIXTURES_DIR}/foo.js`);
+    await expect(
+      remote.execute('call prettier#resolver#config#resolve({}, 0, 1, 1)')
+    ).resolves.toBeDefined();
+  });
+}
 
 // run formatting tests in all fixtures
 fs.readdirSync(FIXTURES_DIR).forEach(file => assertFormatting(file));

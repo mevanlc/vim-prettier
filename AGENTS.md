@@ -118,6 +118,29 @@ plugin versions:
 - Lua and Ruby fixture tests still fail as no-op formatting. Current bundled Lua
   and Ruby plugin versions are not viable Prettier 3 targets and need separate
   support decisions before being advertised.
+- Split formatting tests into a blocking known-passing lane and a quarantined
+  Lua/Ruby lane, so CI no longer hides regressions in already-passing fixtures
+  behind expected plugin-language failures.
+
+## Review Findings After b538e29
+
+- At `b538e29`, CI full formatting discovery was non-blocking, so regressions
+  in already-passing languages could be hidden.
+- The blocking smoke test only protects the Vim 9 `execute()`/config-version
+  regression. It does not protect actual formatting, PHP/XML plugin loading,
+  async behavior, or project-local Prettier behavior.
+- Project-local Prettier behavior is not fully proven because executable
+  resolution still uses `getcwd()`, not the buffer's file tree.
+- PHP/XML passing is scoped to bundled fallback tooling from this checkout and
+  should not be treated as a project-local guarantee.
+- Lua/Ruby no-op fixture failures are due to no plugin wiring in their
+  ftplugins. Separate direct checks indicate the bundled plugin versions are not
+  viable Prettier 3 targets.
+- Svelte remains an unmeasured plugin-language gap despite being documented and
+  bundled.
+- Lint/tooling reproducibility is still incomplete because `vint` is missing,
+  Node/Yarn expectations are not pinned or documented, and CI does not run
+  `git diff --check`.
 
 ## Work Stages
 
@@ -134,18 +157,29 @@ plugin versions:
 
 - [x] Add an initial CI smoke workflow for the known Vim 9 regression and
   non-blocking full-suite discovery.
-- [ ] Add CI with an editor and Prettier compatibility matrix.
-- [ ] Decide whether lint runs from a pinned container or installable local deps.
+- [x] Split Jest formatting tests into blocking known-passing and quarantined
+  known-failing lanes.
+- [ ] Harden CI with explicit Vim version/feature checks and `git diff --check`.
+- [ ] Add CI with an editor and Prettier compatibility matrix after smoke lanes
+  are stable.
+- [ ] Resolve `vint` reproducibility through a pinned container or installable
+  local deps.
 - [ ] Replace or deprecate the current Dockerfile path.
-- [ ] Document supported Node and package-manager versions.
+- [ ] Document supported Node and Yarn/package-manager versions.
 
 ### Stage 2: Prettier and Plugin Compatibility
 
 - [x] Update classified Prettier 3.0.3 core snapshots for GraphQL, SCSS, Vue,
   and YAML without changing plugin-language snapshots broadly.
 - [x] Add explicit plugin argument support for PHP/XML bundled fallback tests.
+- [ ] Add targeted plugin config tests for `g:prettier#config#plugins`, including
+  string, list, empty, invalid, and paths with spaces.
+- [ ] Add project-local Prettier tests proving bundled plugin injection does not
+  override local Prettier/plugins.
 - [ ] Validate core Prettier language fixtures on Prettier 2.8.8 and 3.x.
 - [ ] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
+- [ ] Decide Lua/Ruby/Svelte support policy together before advertising or
+  removing any plugin-language support.
 - [ ] Decide whether bundled plugin support remains in scope.
 - [ ] If bundled plugins remain supported, add explicit plugin resolution without
   breaking project-local Prettier/plugin behavior.
@@ -153,7 +187,8 @@ plugin versions:
 
 ### Stage 3: Command and Resolver Hardening
 
-- [ ] Resolve Prettier from the buffer's file tree, not only `getcwd()`.
+- [ ] Fix resolver to search for Prettier from the buffer's file tree, not only
+  `getcwd()`.
 - [ ] Avoid mutating buffer filetype defaults when merging overrides.
 - [ ] Make command construction shell-safe for spaces, quotes, and Windows.
 - [ ] Prefer argv-list job/system APIs where Vim/Neovim support allows.
@@ -190,6 +225,10 @@ tooling gap or a product regression.
 
 - Does the change improve measured compatibility, or only update assumptions?
 - Does it preserve project-local Prettier and config resolution?
+- Are known-passing formatting languages protected by blocking CI?
+- Do project-local Prettier/plugin tests prove bundled fallback is not overriding
+  local tooling?
+- Does CI run explicit Vim version/feature checks and `git diff --check`?
 - Does it affect async buffer replacement or writes?
 - Does it change support policy, install behavior, or user-facing commands?
 - Are README and help docs updated when behavior changes?

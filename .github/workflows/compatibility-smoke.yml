@@ -31,8 +31,34 @@ jobs:
       - name: Run targeted smoke check
         run: yarn test:smoke
 
-  full-formatting-discovery:
-    name: Full formatting suite discovery
+  known-passing-formatting:
+    name: Known-passing formatting fixtures
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Vim
+        run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run known-passing formatting fixtures
+        run: yarn test:formatting:passing
+
+  quarantined-formatting-discovery:
+    name: Quarantined Lua/Ruby formatting discovery
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -55,5 +81,5 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Run full formatting suite as discovery
-        run: yarn test
+      - name: Run quarantined Lua/Ruby formatting discovery
+        run: yarn test:formatting:quarantined
