@@ -2,8 +2,8 @@ let s:ROOT_DIR = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 let s:PLUGIN_ROOT_DIR = fnamemodify(s:ROOT_DIR, ':h:h:h')
 
 function! s:NormalizePath(path) abort
-  let l:path = substitute(a:path, '\\ ', ' ', 'g')
-  return substitute(resolve(fnamemodify(l:path, ':p')), '\\', '/', 'g')
+  let l:path = resolve(fnamemodify(a:path, ':p'))
+  return has('win32') || has('win64') ? substitute(l:path, '\\', '/', 'g') : l:path
 endfunction
 
 function! prettier#resolver#executable#isUnderPluginRoot(path) abort
@@ -39,24 +39,24 @@ function! prettier#resolver#executable#getPath() abort
     if isdirectory(l:bufferDir)
       let l:bufferLocalExec = s:ResolveExecutable(l:bufferDir)
       if executable(l:bufferLocalExec)
-        return fnameescape(l:bufferLocalExec)
+        return l:bufferLocalExec
       endif
     endif
   endif
 
   let l:localExec = s:ResolveExecutable(getcwd())
   if executable(l:localExec)
-    return fnameescape(l:localExec)
+    return l:localExec
   endif
 
   let l:globalExec = s:ResolveExecutable()
   if executable(l:globalExec)
-    return fnameescape(l:globalExec)
+    return l:globalExec
   endif
 
   let l:pluginExec = s:ResolveExecutable(s:ROOT_DIR)
   if executable(l:pluginExec)
-    return fnameescape(l:pluginExec)
+    return l:pluginExec
   endif
 
   return -1

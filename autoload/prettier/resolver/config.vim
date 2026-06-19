@@ -147,7 +147,7 @@ endfunction
 " file.
 function! s:Flag_stdin_filepath(...) abort
   let l:current_file = simplify(expand('%:p'))
-  return '--stdin-filepath="' . l:current_file . '"'
+  return '--stdin-filepath=' . shellescape(l:current_file)
 endfunction
 
 " Returns '--loglevel error' or '--log-level error'.
@@ -304,7 +304,7 @@ function! s:Get_prettier_cli_version() abort
     return ''
   endif
 
-  let l:output = system(l:execCmd . ' --version')
+  let l:output = system(shellescape(l:execCmd) . ' --version')
   " The shell sends the string with whitespaces at both ends.
   let l:prettier_cli_version = s:Trim_internal_unprintable(trim(l:output))
   return l:prettier_cli_version

@@ -48,6 +48,12 @@ const getBufferContents = async remote =>
 
 const vimString = value => `'${value.replace(/'/g, "''")}'`;
 
+const vimStringExpr = value =>
+  value
+    .split('"')
+    .map(vimString)
+    .join(' . nr2char(34) . ');
+
 const removeDirectorySync = dir => {
   if (!fs.existsSync(dir)) {
     return;
@@ -72,17 +78,41 @@ const cleanupTempProjects = () => {
   }
 };
 
-const writeFakePrettierExecutable = prettierPath => {
-  fs.writeFileSync(
-    prettierPath,
-    [
-      '#!/bin/sh',
-      'if [ "$1" = "--version" ]; then',
-      "  printf '3.0.3\\n'",
-      'fi',
-      'exit 0',
-    ].join('\n') + '\n'
-  );
+const writeFakePrettierExecutable = (prettierPath, options = {}) => {
+  const script = [
+    '#!/bin/sh',
+    'if [ "$1" = "--version" ]; then',
+    "  printf '3.0.3\\n'",
+    '  exit 0',
+    'fi',
+  ];
+
+  if (options.expectedStdinFilepath) {
+    script.push(
+      `expected_stdin_filepath=${shellQuote(options.expectedStdinFilepath)}`,
+      'found_stdin_filepath=0',
+      'for arg in "$@"; do',
+      '  if [ "$arg" = "--stdin-filepath=$expected_stdin_filepath" ]; then',
+      '    found_stdin_filepath=1',
+      '  fi',
+      'done',
+      'if [ "$found_stdin_filepath" != "1" ]; then',
+      "  printf '%s\\n' 'missing expected stdin filepath' >&2",
+      '  exit 2',
+      'fi'
+    );
+  }
+
+  if (Object.prototype.hasOwnProperty.call(options, 'formattedOutput')) {
+    script.push(
+      'cat >/dev/null',
+      `printf '%s\\n' ${shellQuote(options.formattedOutput)}`
+    );
+  }
+
+  script.push('exit 0');
+
+  fs.writeFileSync(prettierPath, script.join('\n') + '\n');
   fs.chmodSync(prettierPath, 0o755);
 };
 
@@ -105,8 +135,32 @@ const createProjectLocalPrettierFixture = extension => {
   return { root, prettierPath, sourcePath };
 };
 
+const createShellSafetyPrettierFixture = () => {
+  const root = fs.mkdtempSync(
+    path.join(fs.realpathSync(os.tmpdir()), 'vim-prettier shell "quote" ')
+  );
+  const binDir = path.join(root, 'node_modules', '.bin');
+  const sourceDir = path.join(root, 'src with spaces');
+  const prettierPath = path.join(binDir, 'prettier');
+  const sourcePath = path.join(sourceDir, 'index "quote".js');
+
+  tempProjectRoots.push(root);
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.mkdirSync(sourceDir, { recursive: true });
+  writeFakePrettierExecutable(prettierPath, {
+    expectedStdinFilepath: sourcePath,
+    formattedOutput: 'const formatted = true;',
+  });
+  fs.writeFileSync(sourcePath, 'const formatted=false\n');
+
+  return { root, prettierPath, sourcePath };
+};
+
 const setVimCwd = dir =>
-  remote.execute(`execute 'cd' fnameescape(${vimString(dir)})`);
+  remote.execute(`execute 'cd' fnameescape(${vimStringExpr(dir)})`);
+
+const editFile = file =>
+  remote.execute(`execute 'edit' fnameescape(${vimStringExpr(file)})`);
 
 const resolveConfigFlags = config =>
   remote.eval(`prettier#resolver#config#resolve(${config}, 0, 1, 1)`);
@@ -428,6 +482,39 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       expect(hasBundledPlugins).toBe(1);
       expect(flags).not.toContain(bundledPluginPath);
       expectNoPluginFlags(flags);
+    });
+  });
+
+  describe('Prettier command shell safety', () => {
+    test('shellescapes stdin filepath for paths containing spaces and quotes', async () => {
+      const project = createShellSafetyPrettierFixture();
+
+      await editFile(project.sourcePath);
+
+      const flags = await resolveConfigFlags('{}');
+      const expectedPath = await remote.eval(
+        "shellescape(simplify(expand('%:p')))"
+      );
+
+      expect(flags).toContain(`--stdin-filepath=${expectedPath}`);
+      expect(flags).not.toContain(`--stdin-filepath="${project.sourcePath}"`);
+    });
+
+    test(':Prettier runs a project-local executable from a shell-escaped path', async () => {
+      const project = createShellSafetyPrettierFixture();
+
+      await setVimCwd(__dirname);
+      await editFile(project.sourcePath);
+
+      const resolvedPath = await remote.eval(
+        'prettier#resolver#executable#getPath()'
+      );
+
+      expect(resolvedPath).toBe(project.prettierPath);
+
+      await remote.execute('Prettier');
+
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
     });
   });
 }

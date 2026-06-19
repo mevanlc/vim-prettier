@@ -27,7 +27,7 @@ function! prettier#PrettierCli(user_input) abort
   let l:execCmd = prettier#resolver#executable#getPath()
 
   if l:execCmd != -1
-    let l:out = system(l:execCmd. ' ' . a:user_input)
+    let l:out = system(shellescape(l:execCmd) . ' ' . a:user_input)
     echom l:out
   else
     call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
@@ -65,7 +65,7 @@ function! prettier#Prettier(...) abort
     " TODO
     " => we should make sure we can resolve --range-start  and --range-end when required
     "    => when the above is required we should also update l:startSelection to '1' and l:endSelection to line('$')
-    let l:cmd = l:execCmd . prettier#resolver#config#resolve(
+    let l:cmd = shellescape(l:execCmd) . prettier#resolver#config#resolve(
           \ prettier#resolver#preset#resolve(l:config),
           \ l:partialFormatEnabled,
           \ l:startSelection, 

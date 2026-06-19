@@ -131,6 +131,10 @@ plugin versions:
   project-local Prettier outside this checkout.
 - `yarn lint` now uses pinned local Python requirements and a checkout-local
   virtualenv wrapper for `vim-vint`, and CI runs it as a blocking job.
+- Hardened the current POSIX shell-string command path by returning raw
+  executable paths from the resolver and shellescaping executable and
+  `--stdin-filepath` arguments at shell call sites. Windows and argv-list job
+  APIs remain open.
 
 ## Review Findings After b538e29
 
@@ -200,7 +204,9 @@ plugin versions:
 - [x] Fix resolver to search for Prettier from the buffer's file tree, not only
   `getcwd()`.
 - [x] Avoid mutating buffer filetype defaults when merging overrides.
-- [ ] Make command construction shell-safe for spaces, quotes, and Windows.
+- [x] Harden POSIX shell-string command construction for executable paths and
+  `--stdin-filepath` paths containing spaces and quotes.
+- [ ] Finish command construction hardening for Windows.
 - [ ] Prefer argv-list job/system APIs where Vim/Neovim support allows.
 - [ ] Expand config-file discovery for modern Prettier config names.
 
