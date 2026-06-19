@@ -5,6 +5,26 @@ on:
   pull_request:
 
 jobs:
+  whitespace:
+    name: Whitespace diff check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whitespace in committed diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "origin/${{ github.base_ref }}...HEAD"
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "${{ github.event.before }}..HEAD"
+          else
+            git diff-tree --check --no-commit-id --root -r HEAD
+          fi
+
   smoke:
     name: Targeted Vim smoke check
     runs-on: ubuntu-latest
@@ -21,6 +41,9 @@ jobs:
 
       - name: Install Vim
         run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
 
       - name: Report Yarn version
         run: yarn --version
@@ -47,6 +70,9 @@ jobs:
 
       - name: Install Vim
         run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
 
       - name: Report Yarn version
         run: yarn --version

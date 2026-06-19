@@ -121,6 +121,8 @@ plugin versions:
 - Split formatting tests into a blocking known-passing lane and a quarantined
   Lua/Ruby lane, so CI no longer hides regressions in already-passing fixtures
   behind expected plugin-language failures.
+- CI now runs an explicit `vim --version` capability check for `+job` and
+  `+channel` in the blocking Vim jobs, plus a blocking `git diff --check` job.
 
 ## Review Findings After b538e29
 
@@ -139,8 +141,8 @@ plugin versions:
 - Svelte remains an unmeasured plugin-language gap despite being documented and
   bundled.
 - Lint/tooling reproducibility is still incomplete because `vint` is missing,
-  Node/Yarn expectations are not pinned or documented, and CI does not run
-  `git diff --check`.
+  Node/Yarn expectations are not pinned or documented, and CI still lacks an
+  editor/Prettier matrix beyond the current Ubuntu Vim lanes.
 
 ## Work Stages
 
@@ -159,7 +161,7 @@ plugin versions:
   non-blocking full-suite discovery.
 - [x] Split Jest formatting tests into blocking known-passing and quarantined
   known-failing lanes.
-- [ ] Harden CI with explicit Vim version/feature checks and `git diff --check`.
+- [x] Harden CI with explicit Vim version/feature checks and `git diff --check`.
 - [ ] Add CI with an editor and Prettier compatibility matrix after smoke lanes
   are stable.
 - [ ] Resolve `vint` reproducibility through a pinned container or installable
