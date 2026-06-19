@@ -256,10 +256,13 @@ endfunction
 
 " Returns the version of the Prettier CLI as a string.
 function! s:Get_prettier_cli_version() abort
-  let l:output = ''
-  redir => l:output
-    silent call prettier#PrettierCli('--version')
-  redir END
+  let l:execCmd = prettier#resolver#executable#getPath()
+  if l:execCmd == -1
+    call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
+    return ''
+  endif
+
+  let l:output = system(l:execCmd . ' --version')
   " The shell sends the string with whitespaces at both ends.
   let l:prettier_cli_version = s:Trim_internal_unprintable(trim(l:output))
   return l:prettier_cli_version

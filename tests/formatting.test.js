@@ -6,6 +6,17 @@ const Server = require('vim-driver/dist/Server');
 const HOST = '127.0.0.1';
 const PORT = 1337;
 const FIXTURES_DIR = `${__dirname}/fixtures`;
+const VIMRC = `${__dirname}/vimrc`;
+
+const shellQuote = value => `'${value.replace(/'/g, `'\\''`)}'`;
+
+const vimExecutable = [
+  process.env.VIM_EXECUTABLE || 'vim',
+  '-Nu',
+  shellQuote(VIMRC),
+  '-n',
+  '-i NONE',
+].join(' ');
 
 let server;
 let remote;
@@ -97,7 +108,11 @@ afterAll(async () => {
 // should ensure that we cache original fixture contents and
 // restore it on the afterEach
 beforeEach(async () => {
-  remote = new HeadlessRemoteClient({host: HOST, port: PORT});
+  remote = new HeadlessRemoteClient({
+    executable: vimExecutable,
+    host: HOST,
+    port: PORT,
+  });
   await remote.connect(server);
 });
 
@@ -121,6 +136,13 @@ afterEach(async () => {
 //  const result = await remote.execute('PrettierVersion');
 //  expect(result).toMatchSnapshot();
 //});
+
+test('Prettier config version detection works inside vim-driver execute', async () => {
+  await remote.edit(`${FIXTURES_DIR}/foo.js`);
+  await expect(
+    remote.execute('call prettier#resolver#config#resolve({}, 0, 1, 1)')
+  ).resolves.toBeDefined();
+});
 
 // run formatting tests in all fixtures
 fs.readdirSync(FIXTURES_DIR).forEach(file => assertFormatting(file));
