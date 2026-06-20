@@ -4,10 +4,15 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   whitespace:
     name: Whitespace diff check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out repository
@@ -28,6 +33,7 @@ jobs:
   lint:
     name: Vimscript lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out repository
@@ -48,6 +54,7 @@ jobs:
   smoke:
     name: Targeted Vim smoke check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -77,6 +84,7 @@ jobs:
   editor-compatibility:
     name: Editor smoke check (${{ matrix.name }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
@@ -132,6 +140,7 @@ jobs:
   known-passing-formatting:
     name: Known-passing formatting fixtures
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -161,6 +170,7 @@ jobs:
   core-formatting:
     name: Core formatting fixtures
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -190,6 +200,7 @@ jobs:
   core-formatting-exec:
     name: Core formatting fixtures with Prettier ${{ matrix.prettier-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
@@ -231,6 +242,7 @@ jobs:
   quarantined-formatting-discovery:
     name: Quarantined Lua/Ruby formatting discovery
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
 
     steps:

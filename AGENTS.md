@@ -166,6 +166,9 @@ plugin versions:
   stale output, ignored output, and quickfix parser errors.
 - Added a blocking editor smoke matrix for Vim 8.2 latest patch, stable Vim,
   Neovim 0.9 latest patch, and stable Neovim.
+- Added workflow concurrency and per-job timeouts so superseded branch pushes are
+  cancelled automatically and hung discovery/test lanes do not consume runners
+  indefinitely.
 - Deprecated the legacy root Dockerfile and documented Node.js 20.x plus Yarn
   Classic 1.x as the measured package-manager path.
 
