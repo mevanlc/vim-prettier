@@ -74,6 +74,61 @@ jobs:
       - name: Run targeted smoke check
         run: yarn test:smoke
 
+  editor-compatibility:
+    name: Editor smoke check (${{ matrix.name }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Vim 8.2 latest patch
+            version: v8.2.5172
+            neovim: false
+          - name: Vim stable
+            version: stable
+            neovim: false
+          - name: Neovim 0.9 latest patch
+            version: v0.9.5
+            neovim: true
+          - name: Neovim stable
+            version: stable
+            neovim: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Set up editor
+        id: editor
+        uses: rhysd/action-setup-vim@v1
+        with:
+          version: ${{ matrix.version }}
+          neovim: ${{ matrix.neovim }}
+          configure-args: --with-features=huge
+
+      - name: Verify editor capabilities
+        run: node scripts/vim-version.js
+        env:
+          VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run targeted smoke check
+        run: yarn test:smoke
+        env:
+          VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+
   known-passing-formatting:
     name: Known-passing formatting fixtures
     runs-on: ubuntu-latest

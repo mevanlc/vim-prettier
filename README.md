@@ -35,11 +35,11 @@ git clone https://github.com/prettier/vim-prettier ~/.vim/pack/plugins/start/vim
 packloadall
 ```
 
-Install with [vim-plug](https://github.com/junegunn/vim-plug), assumes node and
-yarn|npm installed globally.
+Install with [vim-plug](https://github.com/junegunn/vim-plug), assumes Node.js
+and Yarn Classic are installed globally.
 
 ```vim
-" post install (yarn install | npm install) then load plugin only for measured files
+" post install with Yarn Classic, then load plugin only for measured files
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install --frozen-lockfile --production',
   \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html', 'php', 'xml'] }
@@ -48,7 +48,7 @@ Plug 'prettier/vim-prettier', {
 or load vim-prettier for every filetype by:
 
 ```vim
-" post install (yarn install | npm install) then load plugin for every filetype
+" post install with Yarn Classic, then load plugin for every filetype
 Plug 'prettier/vim-prettier', { 'do': 'yarn install --frozen-lockfile --production' }
 ```
 
@@ -66,8 +66,8 @@ call dein#add('prettier/vim-prettier', {'build': 'npm install'})
 ```
 
 If using other vim plugin managers or doing manual setup make sure to have
-`prettier` installed globally or go to your vim-prettier directory and either do
-`npm install` or `yarn install --frozen-lockfile`
+`prettier` installed globally or go to your vim-prettier directory and run
+`yarn install --frozen-lockfile`.
 
 ### Prettier Executable resolution
 
@@ -85,6 +85,22 @@ vim-prettier executable resolution:
 
 Compatibility is being rebuilt from measured fixtures. Project-local Prettier,
 configuration, and plugins take precedence over vim-prettier's bundled fallback.
+
+Current blocking CI measures the targeted smoke suite on Vim 8.2 latest patch,
+latest stable Vim, Neovim 0.9 latest patch, and latest stable Neovim. Blocking
+formatting fixtures run on the Ubuntu stable Vim package, with separate core
+Prettier checks for the bundled Prettier baseline, Prettier 2.8.8, and latest
+Prettier.
+
+Development and CI use Node.js 20.x with Yarn Classic 1.x and the checked-in
+Yarn v1 lockfile. Use `yarn install --frozen-lockfile` for reproducible installs.
+`npm install` is not currently a measured package-manager path and may produce a
+different dependency tree.
+
+The root `Dockerfile` is deprecated and kept only for historical reference. It
+uses Alpine 3.8, an unpinned `testbed/vim:latest` base image, and legacy editor
+versions; it is not an authoritative compatibility environment. Prefer GitHub
+Actions or the local verification commands below.
 
 Bundled plugin loading is currently measured for PHP and XML only when using the
 vim-prettier bundled Prettier. Lua and Ruby bundled formatting are quarantined
@@ -320,4 +336,8 @@ let g:prettier#config#end_of_line = get(g:, 'prettier#config#end_of_line', 'lf')
 
 ### REQUIREMENT(S)
 
-If the `prettier` executable can't be found by Vim, no code formatting will happen
+If the `prettier` executable can't be found by Vim, no code formatting will happen.
+
+For development and compatibility verification, use Node.js 20.x and Yarn
+Classic 1.x with `yarn install --frozen-lockfile`. The Yarn v1 lockfile is the
+only measured package-manager path at this time.

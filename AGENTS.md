@@ -153,6 +153,21 @@ plugin versions:
   `prettier@latest` installs outside the repo.
 - Added a blocking CI core-formatting matrix for caller-provided Prettier 2.8.8
   and latest executables outside this checkout.
+- Added explicit bundled PHP/XML plugin injection tests and matching
+  project-local PHP/XML guardrail tests proving bundled plugin flags are skipped
+  outside this checkout.
+- Reworked command construction to build argv-list commands for Vim/Neovim job
+  APIs while preserving the existing shell-string fallback for sync/legacy paths.
+- Hardened async formatting by tracking jobs per buffer, comparing
+  `b:changedtick` before replacement, resetting job state on exit paths, and
+  keeping manual `:PrettierAsync` from writing to disk while preserving
+  autoformat-on-save writes.
+- Added async safety tests for manual no-write behavior, concurrent buffer jobs,
+  stale output, ignored output, and quickfix parser errors.
+- Added a blocking editor smoke matrix for Vim 8.2 latest patch, stable Vim,
+  Neovim 0.9 latest patch, and stable Neovim.
+- Deprecated the legacy root Dockerfile and documented Node.js 20.x plus Yarn
+  Classic 1.x as the measured package-manager path.
 
 ## Review Findings After b538e29
 
@@ -192,12 +207,12 @@ plugin versions:
 - [x] Split Jest formatting tests into blocking known-passing and quarantined
   known-failing lanes.
 - [x] Harden CI with explicit Vim version/feature checks and `git diff --check`.
-- [ ] Add CI with an editor compatibility matrix after smoke lanes are stable.
+- [x] Add CI with an editor compatibility matrix after smoke lanes are stable.
 - [x] Add CI with a Prettier core compatibility matrix.
 - [x] Resolve `vint` reproducibility through a pinned container or installable
   local deps.
-- [ ] Replace or deprecate the current Dockerfile path.
-- [ ] Document supported Node and Yarn/package-manager versions.
+- [x] Replace or deprecate the current Dockerfile path.
+- [x] Document supported Node and Yarn/package-manager versions.
 
 ### Stage 2: Prettier and Plugin Compatibility
 
@@ -216,9 +231,9 @@ plugin versions:
 - [x] Decide Lua/Ruby/Svelte support policy together before advertising or
   removing any plugin-language support.
 - [x] Decide whether bundled plugin support remains in scope.
-- [ ] If bundled plugins remain supported, add explicit plugin resolution without
+- [x] If bundled plugins remain supported, add explicit plugin resolution without
   breaking project-local Prettier/plugin behavior.
-- [ ] Add or update fixtures for each supported plugin language.
+- [x] Add or update fixtures for each supported plugin language.
 
 ### Stage 3: Command and Resolver Hardening
 
@@ -227,25 +242,25 @@ plugin versions:
 - [x] Avoid mutating buffer filetype defaults when merging overrides.
 - [x] Harden POSIX shell-string command construction for executable paths and
   `--stdin-filepath` paths containing spaces and quotes.
-- [ ] Finish command construction hardening for Windows.
-- [ ] Prefer argv-list job/system APIs where Vim/Neovim support allows.
+- [x] Finish command construction hardening for Windows-supported job APIs.
+- [x] Prefer argv-list job APIs where Vim/Neovim support allows.
 - [x] Expand config-file discovery for modern Prettier config names.
 
 ### Stage 4: Async Safety
 
-- [ ] Track async jobs per buffer instead of with one global running flag.
-- [ ] Reset job state on every exit path.
-- [ ] Capture and compare `b:changedtick` before replacing async output.
-- [ ] Ensure manual `:PrettierAsync` does not unexpectedly write to disk.
-- [ ] Add tests for buffer switching, stale output, ignored files, and quickfix
+- [x] Track async jobs per buffer instead of with one global running flag.
+- [x] Reset job state on every exit path.
+- [x] Capture and compare `b:changedtick` before replacing async output.
+- [x] Ensure manual `:PrettierAsync` does not unexpectedly write to disk.
+- [x] Add tests for buffer switching, stale output, ignored files, and quickfix
   behavior.
 
 ### Stage 5: Docs and Release Prep
 
-- [ ] Sync README and `doc/prettier.txt`.
-- [ ] Document supported Vim, Neovim, Node, Prettier, and parser-plugin versions.
-- [ ] Document bundled fallback vs project-local Prettier behavior.
-- [ ] Add migration notes for unsupported legacy combinations.
+- [x] Sync README and `doc/prettier.txt`.
+- [x] Document supported Vim, Neovim, Node, Prettier, and parser-plugin versions.
+- [x] Document bundled fallback vs project-local Prettier behavior.
+- [x] Add migration notes for unsupported legacy combinations.
 - [ ] Cut a prerelease only after CI is green for the declared matrix.
 
 ## Verification Commands
