@@ -194,6 +194,17 @@ plugin versions:
 - Keep compatibility CI manual-only while doing this work. Use local verification
   first, then push with `[skip ci]` unless a maintainer explicitly requests a
   manual workflow run.
+- Upgraded the test harness from `jest@23.6.0` to pinned `jest@29.7.0` and
+  regenerated `yarn.lock`. This removed the old jsdom/request/Babel 6/ws stack
+  from the lockfile.
+- Added `scripts/jest.js` so Jest 29 runs under Node 25 by deleting Node's
+  experimental webstorage globals before Jest copies global descriptors. This is
+  a test-harness compatibility shim, not vim-prettier runtime behavior.
+- Added `jest.config.js` to keep the existing snapshot string escaping behavior,
+  avoiding broad fixture snapshot churn from the Jest upgrade.
+- After the Jest upgrade, `yarn audit --json` still reports unique findings for
+  `brace-expansion`, `minimatch`, and `js-yaml` through Jest/Istanbul/glob
+  paths, plus `nanoid` through `vim-driver -> shortid -> nanoid`.
 
 ## Review Findings After b538e29
 
@@ -291,18 +302,23 @@ plugin versions:
 
 ### Stage 6: Security and Test Tooling
 
-- [ ] Upgrade or replace `jest@23.6.0` to remove the stale jsdom/request/Babel 6
+- [x] Upgrade or replace `jest@23.6.0` to remove the stale jsdom/request/Babel 6
   dependency stack.
-- [ ] Prefer the smallest test-runner change that preserves vim-driver behavior,
+- [x] Prefer the smallest test-runner change that preserves vim-driver behavior,
   snapshot semantics, and manual compatibility lanes.
-- [ ] Run `yarn install --frozen-lockfile` after updating `yarn.lock` from a
+- [x] Run `yarn install --frozen-lockfile` after updating `yarn.lock` from a
   controlled dependency change.
-- [ ] Run `yarn audit --json` and record the remaining unique advisories by
+- [x] Run `yarn audit --json` and record the remaining unique advisories by
   runtime vs dev/test dependency path.
-- [ ] Verify at minimum `yarn test:smoke`, `yarn test:formatting:core`, targeted
+- [x] Verify at minimum `yarn test:smoke`, `yarn test:formatting:core`, targeted
   async safety tests, `yarn lint`, and `git diff --check` locally before pushing.
-- [ ] If the Jest upgrade changes snapshot formatting or timeout behavior,
+- [x] If the Jest upgrade changes snapshot formatting or timeout behavior,
   classify those as harness changes separately from Prettier/runtime changes.
+- [ ] Decide whether to keep Jest 29 with targeted overrides for remaining
+  `glob`/`minimatch`/`brace-expansion`/`js-yaml` dev-tooling advisories, or move
+  to a newer test runner/Jest major in a follow-up slice.
+- [ ] Decide whether to replace `vim-driver` or its `shortid` dependency path to
+  remove the remaining `nanoid` advisory.
 
 ## Verification Commands
 
