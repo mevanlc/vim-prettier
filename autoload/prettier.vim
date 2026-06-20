@@ -43,7 +43,7 @@ function! prettier#Autoformat(...) abort
   if l:autoformat
     call prettier#Prettier(1, 1, line('$'), 0, {
       \ 'requirePragma': g:prettier#autoformat_require_pragma ? 'true' : 'false'
-      \ })
+      \ }, {'write': 1})
   endif
 endfunction
 
@@ -58,6 +58,8 @@ function! prettier#Prettier(...) abort
   let l:partialFormatEnabled = l:hasSelection && l:partialFormat
 
   let l:overWrite = a:0 > 4 ? a:5 : {}
+  let l:options = a:0 > 5 ? a:6 : {}
+  let l:write = get(l:options, 'write', 0)
   let l:bufferConfig = getbufvar(bufnr('%'), 'prettier_ft_default_args', {})
   let l:config = extend(copy(l:bufferConfig), l:overWrite)
 
@@ -65,10 +67,11 @@ function! prettier#Prettier(...) abort
     " TODO
     " => we should make sure we can resolve --range-start  and --range-end when required
     "    => when the above is required we should also update l:startSelection to '1' and l:endSelection to line('$')
-    let l:cmd = shellescape(l:execCmd) . prettier#resolver#config#resolve(
+    let l:cmd = prettier#command#build(
+          \ l:execCmd,
           \ prettier#resolver#preset#resolve(l:config),
           \ l:partialFormatEnabled,
-          \ l:startSelection, 
+          \ l:startSelection,
           \ l:endSelection)
 
     " close quickfix if it is opened
@@ -81,7 +84,7 @@ function! prettier#Prettier(...) abort
     endif
 
     " format buffer
-    call prettier#job#runner#run(l:cmd, l:startSelection, l:endSelection, l:async)
+    call prettier#job#runner#run(l:cmd, l:startSelection, l:endSelection, l:async, l:write)
   else
     call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
   endif

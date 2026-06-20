@@ -5,7 +5,7 @@ const HeadlessRemoteClient = require('vim-driver/dist/HeadlessRemoteClient');
 const Server = require('vim-driver/dist/Server');
 
 const HOST = '127.0.0.1';
-const PORT = 1337;
+const PORT = Number(process.env.VIM_DRIVER_PORT || 10000 + (process.pid % 50000));
 const FIXTURES_DIR = `${__dirname}/fixtures`;
 const VIMRC = `${__dirname}/vimrc`;
 const FORMAT_FIXTURE_LANE = process.env.PRETTIER_FORMATTING_FIXTURE_LANE || 'all';
@@ -121,10 +121,30 @@ const writeFakePrettierExecutable = (prettierPath, options = {}) => {
   }
 
   if (Object.prototype.hasOwnProperty.call(options, 'formattedOutput')) {
+    if (options.delaySeconds) {
+      script.push(`sleep ${options.delaySeconds}`);
+    }
+
     script.push(
       'cat >/dev/null',
       `printf '%s\\n' ${shellQuote(options.formattedOutput)}`
     );
+  } else if (options.stderr) {
+    if (options.delaySeconds) {
+      script.push(`sleep ${options.delaySeconds}`);
+    }
+
+    script.push(
+      'cat >/dev/null',
+      `printf '%s\\n' ${shellQuote(options.stderr)} >&2`,
+      `exit ${options.exitCode || 1}`
+    );
+  } else {
+    if (options.delaySeconds) {
+      script.push(`sleep ${options.delaySeconds}`);
+    }
+
+    script.push('cat >/dev/null');
   }
 
   script.push('exit 0');
@@ -171,6 +191,27 @@ const createShellSafetyPrettierFixture = () => {
   fs.writeFileSync(sourcePath, 'const formatted=false\n');
 
   return { root, prettierPath, sourcePath };
+};
+
+const createAsyncPrettierFixture = (files, options = {}) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vim-prettier-async-'));
+  const binDir = path.join(root, 'node_modules', '.bin');
+  const sourceDir = path.join(root, 'src');
+  const prettierPath = path.join(binDir, 'prettier');
+  const sourcePaths = {};
+
+  tempProjectRoots.push(root);
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.mkdirSync(sourceDir, { recursive: true });
+  writeFakePrettierExecutable(prettierPath, options);
+
+  Object.keys(files).forEach(file => {
+    const sourcePath = path.join(sourceDir, file);
+    fs.writeFileSync(sourcePath, files[file]);
+    sourcePaths[file] = sourcePath;
+  });
+
+  return { root, prettierPath, sourcePaths };
 };
 
 const createConfigDiscoveryFixture = configFileName => {
@@ -497,8 +538,32 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       }
     });
 
-    test('does not inject bundled PHP plugin for project-local Prettier', async () => {
-      const project = createProjectLocalPrettierFixture('php');
+    test.each([
+      ['PHP', 'foo.php'],
+      ['XML', 'foo.xml'],
+    ])('injects bundled %s plugin for bundled Prettier', async (_name, fixture) => {
+      await setVimCwd(__dirname);
+      await remote.edit(`${FIXTURES_DIR}/${fixture}`);
+
+      const resolvedPath = await remote.eval(
+        'prettier#resolver#executable#getPath()'
+      );
+      const bundledPluginPath = await remote.eval(
+        "get(b:prettier_ft_default_args, 'bundledPlugins', [''])[0]"
+      );
+      const flags = await resolveConfigFlags('b:prettier_ft_default_args');
+
+      expect(resolvedPath).toContain(path.join('vim-prettier', 'node_modules'));
+      expect(bundledPluginPath).toContain(path.join('vim-prettier', 'node_modules'));
+      expect(flags).toContain(`--plugin='${bundledPluginPath}'`);
+      expect(countPluginFlags(flags)).toBe(1);
+    });
+
+    test.each([
+      ['PHP', 'php'],
+      ['XML', 'xml'],
+    ])('does not inject bundled %s plugin for project-local Prettier', async (_name, extension) => {
+      const project = createProjectLocalPrettierFixture(extension);
 
       await setVimCwd(__dirname);
       await remote.edit(project.sourcePath);
@@ -563,6 +628,43 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       expect(flags).not.toContain(`--stdin-filepath="${project.sourcePath}"`);
     });
 
+    test('builds argv args without shellescaping paths containing spaces and quotes', async () => {
+      const project = createShellSafetyPrettierFixture();
+      const pluginPath = path.join(project.root, 'plugin path', 'prettier-plugin-example.js');
+
+      await editFile(project.sourcePath);
+
+      const args = await remote.eval(
+        `prettier#resolver#config#resolve_args({'plugins': ${vimString(pluginPath)}}, 0, 1, 1)`
+      );
+
+      expect(args).toContain(`--stdin-filepath=${project.sourcePath}`);
+      expect(args).toContain(`--plugin=${pluginPath}`);
+      expect(args).not.toContain(`--stdin-filepath='${project.sourcePath}'`);
+      expect(args).not.toContain(`--plugin='${pluginPath}'`);
+    });
+
+    test('builds command argv while preserving shell-string fallback', async () => {
+      const project = createShellSafetyPrettierFixture();
+
+      await editFile(project.sourcePath);
+
+      const command = await remote.eval(
+        `prettier#command#build(${vimString(project.prettierPath)}, {}, 0, 1, 1)`
+      );
+      const shellExecutable = await remote.eval(
+        `shellescape(${vimString(project.prettierPath)})`
+      );
+      const shellFilepath = await remote.eval(
+        "shellescape(simplify(expand('%:p')))"
+      );
+
+      expect(command.argv[0]).toBe(project.prettierPath);
+      expect(command.argv).toContain(`--stdin-filepath=${project.sourcePath}`);
+      expect(command.shell).toContain(shellExecutable);
+      expect(command.shell).toContain(`--stdin-filepath=${shellFilepath}`);
+    });
+
     test(':Prettier runs a project-local executable from a shell-escaped path', async () => {
       const project = createShellSafetyPrettierFixture();
 
@@ -578,6 +680,107 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       await remote.execute('Prettier');
 
       expect(await getBufferContents(remote)).toBe('const formatted = true;');
+    });
+  });
+
+  describe('Prettier async safety', () => {
+    test(':PrettierAsync updates the buffer without writing to disk', async () => {
+      const project = createAsyncPrettierFixture(
+        { 'manual.js': 'const formatted=false\n' },
+        { formattedOutput: 'const formatted = true;' }
+      );
+      const sourcePath = project.sourcePaths['manual.js'];
+
+      await editFile(sourcePath);
+      await remote.execute('PrettierAsync');
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;');
+
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+      expect(fs.readFileSync(sourcePath, 'utf8')).toBe('const formatted=false\n');
+    });
+
+    test('runs async jobs independently per buffer', async () => {
+      const project = createAsyncPrettierFixture(
+        {
+          'one.js': 'const one=false\n',
+          'two.js': 'const two=false\n',
+        },
+        { delaySeconds: 1, formattedOutput: 'const formatted = true;' }
+      );
+
+      await remote.execute('set hidden');
+      await editFile(project.sourcePaths['one.js']);
+      const firstBuffer = await remote.eval('bufnr("%")');
+      await remote.execute('PrettierAsync');
+      await editFile(project.sourcePaths['two.js']);
+      await remote.execute('PrettierAsync');
+
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;', 3000);
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+
+      await remote.execute(`execute 'buffer' ${firstBuffer}`);
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;', 3000);
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+    });
+
+    test('does not replace a buffer changed after async formatting starts', async () => {
+      const project = createAsyncPrettierFixture(
+        { 'stale.js': 'const stale=false\n' },
+        { delaySeconds: 1, formattedOutput: 'const formatted = true;' }
+      );
+
+      await editFile(project.sourcePaths['stale.js']);
+      await remote.execute('PrettierAsync');
+      await remote.execute("call setline(1, 'const userEdit = true;')");
+      await sleep(1500);
+
+      expect(await getBufferContents(remote)).toBe('const userEdit = true;');
+
+      await remote.execute('PrettierAsync');
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;', 3000);
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+    });
+
+    test('resets async job state after ignored empty output', async () => {
+      const project = createAsyncPrettierFixture(
+        { 'ignored.js': 'const ignored=false\n' },
+        { delaySeconds: 1 }
+      );
+      const sourcePath = project.sourcePaths['ignored.js'];
+
+      await editFile(sourcePath);
+      await remote.execute('PrettierAsync');
+      await sleep(1500);
+      writeFakePrettierExecutable(project.prettierPath, {
+        formattedOutput: 'const formatted = true;',
+      });
+      await remote.execute('PrettierAsync');
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;');
+
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+    });
+
+    test('opens quickfix and resets async job state after parser errors', async () => {
+      const project = createAsyncPrettierFixture(
+        { 'broken.js': 'const broken =\n' },
+        { stderr: 'stdin: SyntaxError: Unexpected token (1:15)' }
+      );
+
+      await editFile(project.sourcePaths['broken.js']);
+      await remote.execute('let g:prettier#quickfix_auto_focus = 0');
+      await remote.execute('PrettierAsync');
+      await waitUntil(async () => Number(await remote.eval('len(getqflist())')) > 0);
+
+      expect(await remote.eval('getqflist()[0].text')).toBe('Unexpected token');
+
+      writeFakePrettierExecutable(project.prettierPath, {
+        formattedOutput: 'const formatted = true;',
+      });
+      await remote.execute('PrettierAsync');
+      await waitUntil(async () => (await getBufferContents(remote)) === 'const formatted = true;');
+
+      expect(await getBufferContents(remote)).toBe('const formatted = true;');
+      await remote.execute('let g:prettier#quickfix_auto_focus = 1');
     });
   });
 }

@@ -16,6 +16,21 @@ function! prettier#resolver#config#resolve(config, hasSelection, start, end) abo
   return l:cmd
 endfunction
 
+function! prettier#resolver#config#resolve_args(config, hasSelection, start, end) abort
+  let l:config_and_sel = {
+          \ 'config': a:config,
+          \ 'hasSelection': a:hasSelection,
+          \ 'start': a:start,
+          \ 'end': a:end}
+
+  let l:args = []
+  for [l:flag, l:props] in items(s:Get_current_version_flags(s:FLAGS))
+    call extend(l:args, s:Map_flag_to_args_part(l:config_and_sel, l:flag, l:props))
+  endfor
+
+  return filter(l:args, 'v:val !=# ""')
+endfunction
+
 " Mapper functions: {{{
 " Returns either '--range-start X' or an empty string.
 function! s:Flag_range_start(config_and_sel, ...) abort
@@ -107,37 +122,9 @@ endfunction
 
 " Returns repeated '--plugin=PLUGIN' args or ''.
 function! s:Flag_plugins(config_and_sel, ...) abort
-  let l:value = get(
-          \ a:config_and_sel.config,
-          \ 'plugins',
-          \ get(g:, 'prettier#config#plugins', []))
-
-  if type(l:value) == type('')
-    let l:plugins = l:value ==# '' ? [] : [l:value]
-  elseif type(l:value) == type([])
-    let l:plugins = copy(l:value)
-  else
-    return ''
-  endif
-
-  if prettier#resolver#executable#isUnderPluginRoot(
-          \ prettier#resolver#executable#getPath())
-    let l:bundled_value = get(a:config_and_sel.config, 'bundledPlugins', [])
-
-    if type(l:bundled_value) == type('')
-      if l:bundled_value !=# ''
-        call add(l:plugins, l:bundled_value)
-      endif
-    elseif type(l:bundled_value) == type([])
-      call extend(l:plugins, l:bundled_value)
-    endif
-  endif
-
   let l:flags = []
-  for l:plugin in l:plugins
-    if type(l:plugin) == type('') && l:plugin !=# ''
+  for l:plugin in s:Get_plugins(a:config_and_sel)
       call add(l:flags, '--plugin=' . shellescape(l:plugin))
-    endif
   endfor
 
   return join(l:flags, ' ')
@@ -174,6 +161,53 @@ endfunction
 " Maps a flag name to a part of a command.
 function! s:Map_flag_to_cmd_part(config_and_sel, flag, props) abort
   return a:props.mapper(a:config_and_sel, a:flag, a:props)
+endfunction
+
+function! s:Map_flag_to_args_part(config_and_sel, flag, props) abort
+  if a:flag ==# '--plugin'
+    return map(s:Get_plugins(a:config_and_sel), '"--plugin=" . v:val')
+  endif
+
+  if a:flag ==# '--stdin-filepath'
+    return ['--stdin-filepath=' . simplify(expand('%:p'))]
+  endif
+
+  let l:part = trim(a:props.mapper(a:config_and_sel, a:flag, a:props))
+  if l:part ==# ''
+    return []
+  endif
+
+  return split(l:part)
+endfunction
+
+function! s:Get_plugins(config_and_sel) abort
+  let l:value = get(
+          \ a:config_and_sel.config,
+          \ 'plugins',
+          \ get(g:, 'prettier#config#plugins', []))
+
+  if type(l:value) == type('')
+    let l:plugins = l:value ==# '' ? [] : [l:value]
+  elseif type(l:value) == type([])
+    let l:plugins = copy(l:value)
+  else
+    return []
+  endif
+
+  if prettier#resolver#executable#isUnderPluginRoot(
+          \ prettier#resolver#executable#getPath())
+    let l:bundled_value = get(a:config_and_sel.config, 'bundledPlugins', [])
+
+    if type(l:bundled_value) == type('')
+      if l:bundled_value !=# ''
+        call add(l:plugins, l:bundled_value)
+      endif
+    elseif type(l:bundled_value) == type([])
+      call extend(l:plugins, l:bundled_value)
+    endif
+  endif
+
+  return filter(l:plugins, 'type(v:val) == type("") && v:val !=# ""')
 endfunction
 " }}}
 

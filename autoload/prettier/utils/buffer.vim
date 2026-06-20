@@ -38,6 +38,13 @@ function! prettier#utils#buffer#replaceAndSave(lines, startSelection, endSelecti
   noautocmd write
 endfunction
 
+function! prettier#utils#buffer#replaceAndMaybeSave(lines, startSelection, endSelection, write) abort
+  call prettier#utils#buffer#replace(a:lines, a:startSelection, a:endSelection)
+  if a:write
+    noautocmd write
+  endif
+endfunction
+
 " Returns 1 if content has changed
 function! prettier#utils#buffer#willUpdatedLinesChangeBuffer(lines, start, end) abort
   return getbufline(bufnr('%'), 1, line('$')) == prettier#utils#buffer#createBufferFromUpdatedLines(a:lines, a:start, a:end) ? 0 : 1
