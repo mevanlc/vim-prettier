@@ -169,6 +169,8 @@ plugin versions:
 - Added workflow concurrency and per-job timeouts so superseded branch pushes are
   cancelled automatically and hung discovery/test lanes do not consume runners
   indefinitely.
+- Changed compatibility CI to manual-only `workflow_dispatch` so compatibility
+  matrices do not consume organization runners on every branch push.
 - Deprecated the legacy root Dockerfile and documented Node.js 20.x plus Yarn
   Classic 1.x as the measured package-manager path.
 
