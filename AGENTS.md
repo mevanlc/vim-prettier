@@ -174,6 +174,27 @@ plugin versions:
 - Deprecated the legacy root Dockerfile and documented Node.js 20.x plus Yarn
   Classic 1.x as the measured package-manager path.
 
+## Security and Tooling Follow-Up
+
+- `yarn audit --json` currently reports many path findings, but the major local
+  risk is old test tooling rather than vim-prettier runtime formatting code.
+- The most important vulnerable paths are pulled by `jest@23.6.0`, especially
+  `jest -> jest-cli -> jest-environment-jsdom -> jsdom` and Istanbul/Babel
+  coverage packages.
+- Representative advisories from the current audit include:
+  `babel-traverse@6.26.0` critical arbitrary code execution,
+  `form-data@2.3.3` critical/high issues, `ws@5.2.3` high DoS issues,
+  `request@2.88.2` moderate SSRF, and several old glob/template dependencies.
+- Treat the runtime user risk as lower than the maintainer/tooling risk because
+  these are dev/test dependencies, but do not ignore them. They affect anyone
+  running the Jest harness against untrusted fixtures or code.
+- Do not paper over these with broad Yarn `resolutions` unless a targeted
+  override is proven safe. The preferred fix is to upgrade or replace
+  `jest@23.6.0` and regenerate `yarn.lock`, then rerun the compatibility lanes.
+- Keep compatibility CI manual-only while doing this work. Use local verification
+  first, then push with `[skip ci]` unless a maintainer explicitly requests a
+  manual workflow run.
+
 ## Review Findings After b538e29
 
 - At `b538e29`, CI full formatting discovery was non-blocking, so regressions
@@ -267,6 +288,21 @@ plugin versions:
 - [x] Document bundled fallback vs project-local Prettier behavior.
 - [x] Add migration notes for unsupported legacy combinations.
 - [ ] Cut a prerelease only after CI is green for the declared matrix.
+
+### Stage 6: Security and Test Tooling
+
+- [ ] Upgrade or replace `jest@23.6.0` to remove the stale jsdom/request/Babel 6
+  dependency stack.
+- [ ] Prefer the smallest test-runner change that preserves vim-driver behavior,
+  snapshot semantics, and manual compatibility lanes.
+- [ ] Run `yarn install --frozen-lockfile` after updating `yarn.lock` from a
+  controlled dependency change.
+- [ ] Run `yarn audit --json` and record the remaining unique advisories by
+  runtime vs dev/test dependency path.
+- [ ] Verify at minimum `yarn test:smoke`, `yarn test:formatting:core`, targeted
+  async safety tests, `yarn lint`, and `git diff --check` locally before pushing.
+- [ ] If the Jest upgrade changes snapshot formatting or timeout behavior,
+  classify those as harness changes separately from Prettier/runtime changes.
 
 ## Verification Commands
 
