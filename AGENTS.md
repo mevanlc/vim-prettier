@@ -139,6 +139,20 @@ plugin versions:
   Docs now scope measured bundled fallback support to PHP/XML, classify Lua/Ruby
   bundled formatting as quarantined failing, and classify Svelte as detected but
   unmeasured under the current Prettier 3 baseline.
+- Added a core-only formatting fixture lane for CSS, GraphQL, HTML, JS, JSON,
+  Less, Markdown, SCSS, TS, Vue, and YAML so core formatter coverage is not mixed
+  with bundled external plugin languages.
+- The test harness can set `g:prettier#exec_cmd_path` from
+  `PRETTIER_EXEC_CMD_PATH`, allowing core fixtures to run against caller-provided
+  Prettier executables outside this checkout without changing package deps.
+- `yarn test:formatting:core` passes against the bundled/current Prettier 3.0.3
+  baseline, and `PRETTIER_EXEC_CMD_PATH=... yarn test:formatting:core:exec`
+  passes against a temp Prettier 2.8.8 install outside the repo.
+- Normalized the Markdown core fixture away from version-specific list
+  indentation and validated the core lane against temp Prettier 2.8.8 and
+  `prettier@latest` installs outside the repo.
+- Added a blocking CI core-formatting matrix for caller-provided Prettier 2.8.8
+  and latest executables outside this checkout.
 
 ## Review Findings After b538e29
 
@@ -178,8 +192,8 @@ plugin versions:
 - [x] Split Jest formatting tests into blocking known-passing and quarantined
   known-failing lanes.
 - [x] Harden CI with explicit Vim version/feature checks and `git diff --check`.
-- [ ] Add CI with an editor and Prettier compatibility matrix after smoke lanes
-  are stable.
+- [ ] Add CI with an editor compatibility matrix after smoke lanes are stable.
+- [x] Add CI with a Prettier core compatibility matrix.
 - [x] Resolve `vint` reproducibility through a pinned container or installable
   local deps.
 - [ ] Replace or deprecate the current Dockerfile path.
@@ -194,7 +208,10 @@ plugin versions:
   string, list, empty, invalid, and paths with spaces.
 - [x] Add project-local Prettier tests proving bundled plugin injection does not
   override local Prettier/plugins.
-- [ ] Validate core Prettier language fixtures on Prettier 2.8.8 and 3.x.
+- [x] Validate core Prettier language fixtures on bundled/current Prettier 3.0.3
+  and project-local Prettier 2.8.8.
+- [x] Decide the Prettier latest core snapshot strategy for the Markdown list
+  indentation delta before adding latest as a blocking target.
 - [x] Audit bundled parser-plugin versions for PHP, Ruby, XML, Lua, and Svelte.
 - [x] Decide Lua/Ruby/Svelte support policy together before advertising or
   removing any plugin-language support.
@@ -235,6 +252,8 @@ plugin versions:
 
 - `yarn install --frozen-lockfile`
 - `yarn test`
+- `yarn test:formatting:core`
+- `PRETTIER_EXEC_CMD_PATH=/path/to/prettier yarn test:formatting:core:exec`
 - `yarn lint`
 - `git diff --check`
 

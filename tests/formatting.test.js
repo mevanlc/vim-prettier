@@ -9,6 +9,19 @@ const PORT = 1337;
 const FIXTURES_DIR = `${__dirname}/fixtures`;
 const VIMRC = `${__dirname}/vimrc`;
 const FORMAT_FIXTURE_LANE = process.env.PRETTIER_FORMATTING_FIXTURE_LANE || 'all';
+const CORE_FORMATTING_FIXTURES = new Set([
+  'foo.css',
+  'foo.graphql',
+  'foo.html',
+  'foo.js',
+  'foo.json',
+  'foo.less',
+  'foo.md',
+  'foo.scss',
+  'foo.ts',
+  'foo.vue',
+  'foo.yaml',
+]);
 const QUARANTINED_FORMATTING_FIXTURES = new Set(['foo.lua', 'foo.rb']);
 const tempProjectRoots = [];
 
@@ -19,6 +32,10 @@ const isSelectedFormattingFixture = file => {
 
   if (FORMAT_FIXTURE_LANE === 'quarantined') {
     return QUARANTINED_FORMATTING_FIXTURES.has(file);
+  }
+
+  if (FORMAT_FIXTURE_LANE === 'core') {
+    return CORE_FORMATTING_FIXTURES.has(file);
   }
 
   if (FORMAT_FIXTURE_LANE === 'all') {

@@ -143,9 +143,7 @@ Lorem ipsum dolor amet
 
 ### bar
 
--   a
--   b
--   c"
+A short paragraph."
 `;
 
 exports[`Prettier formats foo.md file with :PrettierAsync command 1`] = `
@@ -155,9 +153,7 @@ Lorem ipsum dolor amet
 
 ### bar
 
--   a
--   b
--   c"
+A short paragraph."
 `;
 
 exports[`Prettier formats foo.php file with :Prettier command 1`] = `

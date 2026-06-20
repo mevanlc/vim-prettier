@@ -6,6 +6,4 @@ Lorem ipsum dolor amet
 
 
 
-- a 
-- b 
-- c
+A short paragraph.

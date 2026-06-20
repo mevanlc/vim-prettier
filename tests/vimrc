@@ -2,6 +2,10 @@
 
 let s:plugin_root = fnamemodify(resolve(expand('<sfile>:p')), ':h:h')
 
+if exists('$PRETTIER_EXEC_CMD_PATH') && $PRETTIER_EXEC_CMD_PATH !=# ''
+    let g:prettier#exec_cmd_path = $PRETTIER_EXEC_CMD_PATH
+endif
+
 if filereadable('/rtp.vim')
     source /rtp.vim
 endif
