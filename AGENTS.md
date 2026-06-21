@@ -325,7 +325,7 @@ plugin versions:
 - [x] Document supported Vim, Neovim, Node, Prettier, and parser-plugin versions.
 - [x] Document bundled fallback vs project-local Prettier behavior.
 - [x] Add migration notes for unsupported legacy combinations.
-- [ ] Cut a prerelease only after CI is green for the declared matrix.
+- [x] Cut a prerelease only after CI is green for the declared matrix.
 
 ### Stage 6: Security and Test Tooling
 
