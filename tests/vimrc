@@ -32,6 +32,7 @@ set tabstop=4
 set softtabstop=4
 set shiftwidth=4
 set expandtab
+autocmd FileType graphql setlocal shiftwidth=4 tabstop=4 softtabstop=4
 set backspace=2
 set nofoldenable
 set foldmethod=syntax

@@ -20,35 +20,35 @@ exports[`Prettier formats foo.css file with :PrettierAsync command 1`] = `
 
 exports[`Prettier formats foo.graphql file with :Prettier command 1`] = `
 "{
-  baz {
-    blah
-    ...name
-  }
-  bean {
-    foo
-    blah
-    bleh
-  }
-  bar {
-    ...name
-  }
+    baz {
+        blah
+        ...name
+    }
+    bean {
+        foo
+        blah
+        bleh
+    }
+    bar {
+        ...name
+    }
 }"
 `;
 
 exports[`Prettier formats foo.graphql file with :PrettierAsync command 1`] = `
 "{
-  baz {
-    blah
-    ...name
-  }
-  bean {
-    foo
-    blah
-    bleh
-  }
-  bar {
-    ...name
-  }
+    baz {
+        blah
+        ...name
+    }
+    bean {
+        foo
+        blah
+        bleh
+    }
+    bar {
+        ...name
+    }
 }"
 `;
 

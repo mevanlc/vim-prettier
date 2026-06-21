@@ -9,12 +9,12 @@
     "url": "git://github.com/prettier/vim-prettier.git"
   },
   "scripts": {
-    "test": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=all node scripts/jest.js",
-    "test:smoke": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=all node scripts/jest.js tests/formatting.test.js --runInBand --testNamePattern=\"Prettier config|Prettier command shell\"",
-    "test:formatting:core": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=core node scripts/jest.js tests/formatting.test.js --runInBand",
-    "test:formatting:core:exec": "node scripts/vim-version.js && node -e \"if (!process.env.PRETTIER_EXEC_CMD_PATH) { console.error('Set PRETTIER_EXEC_CMD_PATH to a Prettier executable'); process.exit(1); }\" && LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=core node scripts/jest.js tests/formatting.test.js --runInBand",
-    "test:formatting:passing": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=known-passing node scripts/jest.js tests/formatting.test.js --runInBand",
-    "test:formatting:quarantined": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=quarantined node scripts/jest.js tests/formatting.test.js --runInBand",
+    "test": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=all node scripts/jest.js --forceExit",
+    "test:smoke": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=all node scripts/jest.js tests/formatting.test.js --runInBand --testNamePattern=\"Prettier config|Prettier command shell\" --forceExit",
+    "test:formatting:core": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=core node scripts/jest.js tests/formatting.test.js --runInBand --forceExit",
+    "test:formatting:core:exec": "node scripts/vim-version.js && node -e \"if (!process.env.PRETTIER_EXEC_CMD_PATH) { console.error('Set PRETTIER_EXEC_CMD_PATH to a Prettier executable'); process.exit(1); }\" && LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=core node scripts/jest.js tests/formatting.test.js --runInBand --forceExit",
+    "test:formatting:passing": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=known-passing node scripts/jest.js tests/formatting.test.js --runInBand --forceExit",
+    "test:formatting:quarantined": "node scripts/vim-version.js && PRETTIER_EXEC_CMD_PATH= LOG_LEVEL=error PRETTIER_FORMATTING_FIXTURE_LANE=quarantined node scripts/jest.js tests/formatting.test.js --runInBand --forceExit",
     "test:editors:docker": "sh scripts/docker-editor-matrix.sh all",
     "lint": "sh scripts/vint.sh --version && sh scripts/vint.sh ."
   },
