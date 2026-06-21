@@ -78,8 +78,26 @@ different dependency tree.
 
 The root Dockerfile is deprecated and kept only for historical reference. It uses
 Alpine 3.8, an unpinned testbed/vim:latest base image, and legacy editor
-versions; it is not an authoritative compatibility environment. Prefer GitHub
-Actions or the local verification commands.
+versions; it is not an authoritative compatibility environment.
+
+For local editor-matrix smoke checks, use the pinned Docker runner:
+>
+  yarn test:editors:docker
+<
+To run one target, use:
+>
+  scripts/docker-editor-matrix.sh vim-8.2
+  scripts/docker-editor-matrix.sh vim-stable
+  scripts/docker-editor-matrix.sh nvim-0.9
+  scripts/docker-editor-matrix.sh nvim-stable
+<
+The Docker runner defaults to linux/amd64 so Neovim release archives are
+available consistently. Neovim targets currently assume x86_64 release archives;
+do not override DOCKER_PLATFORM for Neovim unless the Dockerfile is updated to
+select a matching asset. Override VIM_STABLE_VERSION to test a newer stable Vim
+tag. Override DOCKER_MATRIX_COMMAND to run a different command inside the matrix
+image. The checkout is mounted read-write, but node_modules and Yarn cache are
+isolated in Docker volumes.
 
 Bundled plugin loading is currently measured for PHP and XML only when using the
 vim-prettier bundled Prettier. Lua and Ruby bundled formatting are quarantined

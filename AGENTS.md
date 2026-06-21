@@ -173,6 +173,14 @@ plugin versions:
   matrices do not consume organization runners on every branch push.
 - Deprecated the legacy root Dockerfile and documented Node.js 20.x plus Yarn
   Classic 1.x as the measured package-manager path.
+- Added a pinned local Docker editor-matrix runner in
+  `docker/editor-matrix.Dockerfile` plus `scripts/docker-editor-matrix.sh`, so
+  Vim 8.2, stable Vim, Neovim 0.9, and stable Neovim smoke checks can be run
+  locally without reviving the deprecated root Dockerfile.
+- Added Neovim support to the checkout-local Jest/Vim harness through Neovim
+  `sockconnect()` newline-mode transport, and made the editor matrix pass
+  `VIM_EXECUTABLE_ARGS=--headless` for Neovim. The local Docker editor matrix
+  passed for Vim 8.2, Vim 9.1 stable tag, Neovim 0.9.5, and Neovim stable.
 
 ## Security and Tooling Follow-Up
 
@@ -205,6 +213,25 @@ plugin versions:
 - After the Jest upgrade, `yarn audit --json` still reports unique findings for
   `brace-expansion`, `minimatch`, and `js-yaml` through Jest/Istanbul/glob
   paths, plus `nanoid` through `vim-driver -> shortid -> nanoid`.
+- Replaced the `vim-driver` package dependency with a checkout-local Jest/Vim
+  harness under `tests/vim-driver/`, adapted from the small subset used by this
+  suite. The local harness uses deterministic process-local counters instead of
+  `shortid`, removing the `vim-driver -> shortid -> nanoid` audit path without
+  changing vim-prettier runtime code.
+- Hardened the local Jest/Vim harness with newline-frame buffering, request
+  rejection on socket close/error, connection timeout cleanup, improved child
+  process cleanup, and upstream MIT license attribution.
+- After removing `vim-driver`, `yarn audit --json` reported only Jest/Istanbul
+  tooling paths for `brace-expansion`, `minimatch`, and `js-yaml`.
+- Added targeted Yarn Classic resolutions for `brace-expansion@1.1.15`,
+  `minimatch@3.1.5`, and `js-yaml@4.2.0` after a Jest 30 probe showed broader
+  test-runner churn did not remove the Istanbul `js-yaml` path. The resolutions
+  clear `yarn audit --json`; Yarn warns that `js-yaml@4.2.0` is outside
+  `@istanbuljs/load-nyc-config`'s requested `^3.13.1` range, so keep smoke/core
+  formatting verification around this override.
+- Local verification used Vim 9.1 plus the Docker editor matrix for Vim 8.2,
+  Vim 9.1 stable tag, Neovim 0.9.5, and Neovim stable. The manual GitHub
+  Actions editor matrix remains useful as an independent runner check.
 
 ## Review Findings After b538e29
 
@@ -314,11 +341,14 @@ plugin versions:
   async safety tests, `yarn lint`, and `git diff --check` locally before pushing.
 - [x] If the Jest upgrade changes snapshot formatting or timeout behavior,
   classify those as harness changes separately from Prettier/runtime changes.
-- [ ] Decide whether to keep Jest 29 with targeted overrides for remaining
+- [x] Decide whether to keep Jest 29 with targeted overrides for remaining
   `glob`/`minimatch`/`brace-expansion`/`js-yaml` dev-tooling advisories, or move
   to a newer test runner/Jest major in a follow-up slice.
-- [ ] Decide whether to replace `vim-driver` or its `shortid` dependency path to
+- [x] Decide whether to replace `vim-driver` or its `shortid` dependency path to
   remove the remaining `nanoid` advisory.
+- [x] Follow up on the remaining Jest/Istanbul `brace-expansion`, `minimatch`,
+  and `js-yaml` advisory paths separately. Do not add broad `resolutions` until
+  each override is proven compatible with Jest 29 and the snapshot harness.
 
 ## Verification Commands
 

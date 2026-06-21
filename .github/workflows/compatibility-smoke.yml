@@ -92,15 +92,19 @@ jobs:
           - name: Vim 8.2 latest patch
             version: v8.2.5172
             neovim: false
+            args: ''
           - name: Vim stable
             version: stable
             neovim: false
+            args: ''
           - name: Neovim 0.9 latest patch
             version: v0.9.5
             neovim: true
+            args: --headless
           - name: Neovim stable
             version: stable
             neovim: true
+            args: --headless
 
     steps:
       - name: Check out repository
@@ -124,6 +128,7 @@ jobs:
         run: node scripts/vim-version.js
         env:
           VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+          VIM_EXECUTABLE_ARGS: ${{ matrix.args }}
 
       - name: Report Yarn version
         run: yarn --version
@@ -135,6 +140,7 @@ jobs:
         run: yarn test:smoke
         env:
           VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+          VIM_EXECUTABLE_ARGS: ${{ matrix.args }}
 
   known-passing-formatting:
     name: Known-passing formatting fixtures

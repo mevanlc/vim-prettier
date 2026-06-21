@@ -1,11 +1,12 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const HeadlessRemoteClient = require('vim-driver/dist/HeadlessRemoteClient');
-const Server = require('vim-driver/dist/Server');
+const HeadlessRemoteClient = require('./vim-driver/HeadlessRemoteClient');
+const Server = require('./vim-driver/Server');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.VIM_DRIVER_PORT || 10000 + (process.pid % 50000));
+const REPO_ROOT = path.resolve(__dirname, '..');
 const FIXTURES_DIR = `${__dirname}/fixtures`;
 const VIMRC = `${__dirname}/vimrc`;
 const FORMAT_FIXTURE_LANE = process.env.PRETTIER_FORMATTING_FIXTURE_LANE || 'all';
@@ -49,6 +50,7 @@ const shellQuote = value => `'${value.replace(/'/g, `'\\''`)}'`;
 
 const vimExecutable = [
   process.env.VIM_EXECUTABLE || 'vim',
+  process.env.VIM_EXECUTABLE_ARGS || '',
   '-Nu',
   shellQuote(VIMRC),
   '-n',
@@ -553,8 +555,8 @@ if (FORMAT_FIXTURE_LANE === 'all') {
       );
       const flags = await resolveConfigFlags('b:prettier_ft_default_args');
 
-      expect(resolvedPath).toContain(path.join('vim-prettier', 'node_modules'));
-      expect(bundledPluginPath).toContain(path.join('vim-prettier', 'node_modules'));
+      expect(resolvedPath).toBe(path.join(REPO_ROOT, 'node_modules', '.bin', 'prettier'));
+      expect(bundledPluginPath).toContain(path.join(REPO_ROOT, 'node_modules'));
       expect(flags).toContain(`--plugin='${bundledPluginPath}'`);
       expect(countPluginFlags(flags)).toBe(1);
     });

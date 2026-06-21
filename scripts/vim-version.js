@@ -4,7 +4,10 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 
 const vimExecutable = process.env.VIM_EXECUTABLE || 'vim';
-const result = spawnSync(vimExecutable, ['--version'], { encoding: 'utf8' });
+const vimExecutableArgs = (process.env.VIM_EXECUTABLE_ARGS || '')
+  .split(/\s+/)
+  .filter(Boolean);
+const result = spawnSync(vimExecutable, [...vimExecutableArgs, '--version'], { encoding: 'utf8' });
 
 if (result.error) {
   console.error(
