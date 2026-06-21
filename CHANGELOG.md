@@ -2,7 +2,33 @@
 
 ## [Unreleased](https://github.com/prettier/vim-prettier/tree/HEAD)
 
-[Full Changelog](https://github.com/prettier/vim-prettier/compare/1.0.0...HEAD)
+[Full Changelog](https://github.com/prettier/vim-prettier/compare/2.0.0-beta.1...HEAD)
+
+## [2.0.0-beta.1](https://github.com/prettier/vim-prettier/tree/2.0.0-beta.1) (unreleased)
+
+[Full Changelog](https://github.com/prettier/vim-prettier/compare/1.0.0...2.0.0-beta.1)
+
+The 2.0.0 beta rebuilds compatibility around tested editor, Prettier, and
+parser-plugin fixtures.
+
+**Compatibility changes:**
+
+- Tested editors are Vim 8.2 latest patch, latest stable Vim, Neovim 0.9 latest
+  patch, and latest stable Neovim.
+- Core Prettier language fixtures are tested with the bundled Prettier baseline,
+  Prettier 2.8.8, and latest Prettier.
+- Project-local Prettier, configuration, and plugins take precedence over the
+  bundled fallback.
+
+**Runtime changes:**
+
+- Resolve project-local Prettier from the current buffer's project tree before
+  Vim's current working directory.
+- Build argv-list commands for async Vim and Neovim jobs while keeping the
+  shell-string fallback for sync and legacy paths.
+- Harden async formatting by tracking jobs per buffer, avoiding stale buffer
+  replacement, and keeping manual `:PrettierAsync` from writing to disk.
+- Add explicit plugin config support through `g:prettier#config#plugins`.
 
 **Closed issues:**
 

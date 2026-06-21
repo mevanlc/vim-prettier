@@ -543,6 +543,7 @@ if (FORMAT_FIXTURE_LANE === 'all') {
     test.each([
       ['PHP', 'foo.php'],
       ['XML', 'foo.xml'],
+      ['Svelte', 'foo.svelte'],
     ])('injects bundled %s plugin for bundled Prettier', async (_name, fixture) => {
       await setVimCwd(__dirname);
       await remote.edit(`${FIXTURES_DIR}/${fixture}`);
@@ -564,6 +565,7 @@ if (FORMAT_FIXTURE_LANE === 'all') {
     test.each([
       ['PHP', 'php'],
       ['XML', 'xml'],
+      ['Svelte', 'svelte'],
     ])('does not inject bundled %s plugin for project-local Prettier', async (_name, extension) => {
       const project = createProjectLocalPrettierFixture(extension);
 

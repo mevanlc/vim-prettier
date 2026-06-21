@@ -1,5 +1,5 @@
 let s:ROOT_DIR = fnamemodify(resolve(expand('<sfile>:p')), ':h:h')
-let s:plugin_path = s:ROOT_DIR . '/node_modules/@prettier/plugin-php/src/index.js'
+let s:plugin_path = s:ROOT_DIR . '/node_modules/@prettier/plugin-php/src/index.mjs'
 
 let b:prettier_ft_default_args = {
   \ 'parser': 'php',

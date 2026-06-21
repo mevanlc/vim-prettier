@@ -200,6 +200,22 @@ exports[`Prettier formats foo.scss file with :PrettierAsync command 1`] = `
 }"
 `;
 
+exports[`Prettier formats foo.svelte file with :Prettier command 1`] = `
+"<script>
+    let name = \\"world\\";
+</script>
+
+<h1>Hello {name}</h1>"
+`;
+
+exports[`Prettier formats foo.svelte file with :PrettierAsync command 1`] = `
+"<script>
+    let name = \\"world\\";
+</script>
+
+<h1>Hello {name}</h1>"
+`;
+
 exports[`Prettier formats foo.ts file with :Prettier command 1`] = `
 "const a: () => number = () => {
     return 2;

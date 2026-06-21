@@ -1,7 +1,7 @@
 {
   "name": "vim-prettier",
   "author": "Mitermayer Reis <mitermayer.reis@gmail.com>",
-  "version": "1.0.0",
+  "version": "2.0.0-beta.1",
   "description": "Vim plugin for prettier",
   "license": "MIT",
   "repository": {
@@ -19,12 +19,11 @@
     "lint": "sh scripts/vint.sh --version && sh scripts/vint.sh ."
   },
   "dependencies": {
-    "@prettier/plugin-lua": "0.0.1",
-    "@prettier/plugin-php": "^0.16.3",
-    "@prettier/plugin-ruby": "^0.8.0",
-    "@prettier/plugin-xml": "^0.7.2",
+    "@prettier/plugin-php": "^0.25.0",
+    "@prettier/plugin-xml": "^3.4.2",
     "prettier": "^3.0.3",
-    "prettier-plugin-svelte": "2.3.1"
+    "prettier-plugin-svelte": "^4.1.1",
+    "svelte": "^5.56.3"
   },
   "resolutions": {
     "**/brace-expansion": "1.1.15",
