@@ -251,6 +251,14 @@ const expectNoPluginFlags = flags => {
 const countPluginFlags = flags => (flags.match(/--plugin=/g) || []).length;
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const timeoutAfter = (promise, ms) => {
+  let timeout;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeout));
+};
 const waitUntil = (condition, timeout = 2000) => {
   return new Promise(resolve => {
     let isTimedOut = false;
@@ -346,18 +354,17 @@ afterEach(async () => {
   try {
     if (remote.isConnected()) {
       try {
-        const filename = await remote.call('expand', ['%:p']);
+        const filename = await timeoutAfter(remote.call('expand', ['%:p']), 5000);
 
         if (filename) {
           // restore the file
-          await remote.execute('earlier 1d | noautocmd | write');
+          await timeoutAfter(remote.execute('earlier 1d | noautocmd | write'), 5000);
         }
       } catch (e) {
-      } finally {
-        await remote.close();
       }
     }
   } finally {
+    await timeoutAfter(remote.close(), 5000).catch(() => {});
     cleanupTempProjects();
   }
 });

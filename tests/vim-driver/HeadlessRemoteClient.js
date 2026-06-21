@@ -121,12 +121,17 @@ class HeadlessRemoteClient {
   }
 
   async close() {
-    this._assertConnected('close');
-    await this._remote.close();
-    if (this._vimProcess != null) {
-      await this._vimProcess.kill();
+    try {
+      if (this._remote != null) {
+        await this._remote.close();
+      }
+    } finally {
+      if (this._vimProcess != null) {
+        await this._vimProcess.kill();
+        this._vimProcess = null;
+      }
+      this._unassignRemote();
     }
-    this._unassignRemote();
     return this;
   }
 

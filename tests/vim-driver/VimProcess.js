@@ -73,10 +73,20 @@ class VimProcess {
         resolve(this);
         return;
       }
-      const onClose = () => {
-        child.removeListener('close', onClose);
-        child.removeListener('exit', onClose);
+      let resolved = false;
+      let killTimeout;
+      const finish = () => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        clearTimeout(killTimeout);
+        child.removeListener('close', finish);
+        child.removeListener('exit', finish);
         resolve(this);
+      };
+      const onClose = () => {
+        finish();
       };
       child.addListener('close', onClose);
       child.addListener('exit', onClose);
@@ -85,6 +95,14 @@ class VimProcess {
       } catch (error) {
         child.kill();
       }
+      killTimeout = setTimeout(() => {
+        try {
+          global.process.kill(-child.pid, 'SIGKILL');
+        } catch (error) {
+          child.kill('SIGKILL');
+        }
+        finish();
+      }, 2000);
     });
   }
 }
