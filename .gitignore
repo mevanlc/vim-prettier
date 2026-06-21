@@ -1,5 +1,6 @@
 TODO
 doc/tags
 node_modules
+.venv-vint/
 .yarn_lock
 yarn.lock

@@ -10,7 +10,7 @@ function! prettier#utils#buffer#replace(lines, startSelection, endSelection) abo
 
   " https://vim.fandom.com/wiki/Restore_the_cursor_position_after_undoing_text_change_made_by_a_script
   " create a fake change entry and merge with undo stack prior to do formating
-  execute "normal! i "
+  execute 'normal! i '
   execute "normal! a\<BS>"
   try | silent undojoin | catch | endtry
 
@@ -36,6 +36,13 @@ endfunction
 function! prettier#utils#buffer#replaceAndSave(lines, startSelection, endSelection) abort
   call prettier#utils#buffer#replace(a:lines, a:startSelection, a:endSelection)
   noautocmd write
+endfunction
+
+function! prettier#utils#buffer#replaceAndMaybeSave(lines, startSelection, endSelection, write) abort
+  call prettier#utils#buffer#replace(a:lines, a:startSelection, a:endSelection)
+  if a:write
+    noautocmd write
+  endif
 endfunction
 
 " Returns 1 if content has changed

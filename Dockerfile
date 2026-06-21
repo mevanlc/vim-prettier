@@ -1,3 +1,12 @@
+# Deprecated compatibility image.
+#
+# This Dockerfile is retained only for historical reference while compatibility
+# support is rebuilt in GitHub Actions. It uses Alpine 3.8, an unpinned
+# testbed/vim:latest base image, and legacy Vim/Neovim versions, so it is not a
+# supported or authoritative test environment for the current compatibility
+# policy. Prefer the workflow in .github/workflows/compatibility-smoke.yml and
+# the local verification commands documented in README.md and doc/prettier.txt.
+
 FROM alpine:3.8 as builder
 
 WORKDIR /tmp

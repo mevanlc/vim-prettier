@@ -1,0 +1,245 @@
+name: Compatibility Smoke
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  whitespace:
+    name: Whitespace diff check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whitespace in committed diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --check "origin/${{ github.base_ref }}...HEAD"
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "${{ github.event.before }}..HEAD"
+          else
+            git diff-tree --check --no-commit-id --root -r HEAD
+          fi
+
+  lint:
+    name: Vimscript lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Python venv support
+        run: sudo apt-get update && sudo apt-get install -y python3-venv
+
+      - name: Run Vimscript lint
+        run: yarn lint
+
+  smoke:
+    name: Targeted Vim smoke check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Vim
+        run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run targeted smoke check
+        run: yarn test:smoke
+
+  editor-compatibility:
+    name: Editor smoke check (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Vim 8.2 latest patch
+            version: v8.2.5172
+            neovim: false
+            args: ''
+          - name: Vim stable
+            version: stable
+            neovim: false
+            args: ''
+          - name: Neovim 0.9 latest patch
+            version: v0.9.5
+            neovim: true
+            args: --headless
+          - name: Neovim stable
+            version: stable
+            neovim: true
+            args: --headless
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Set up editor
+        id: editor
+        uses: rhysd/action-setup-vim@v1
+        with:
+          version: ${{ matrix.version }}
+          neovim: ${{ matrix.neovim }}
+          configure-args: --with-features=huge
+
+      - name: Verify editor capabilities
+        run: node scripts/vim-version.js
+        env:
+          VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+          VIM_EXECUTABLE_ARGS: ${{ matrix.args }}
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run targeted smoke check
+        run: yarn test:smoke
+        env:
+          VIM_EXECUTABLE: ${{ steps.editor.outputs.executable }}
+          VIM_EXECUTABLE_ARGS: ${{ matrix.args }}
+
+  known-passing-formatting:
+    name: Known-passing formatting fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Vim
+        run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run known-passing formatting fixtures
+        run: yarn test:formatting:passing
+
+  core-formatting:
+    name: Core formatting fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Vim
+        run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run core formatting fixtures
+        run: yarn test:formatting:core
+
+  core-formatting-exec:
+    name: Core formatting fixtures with Prettier ${{ matrix.prettier-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        prettier-version:
+          - 2.8.8
+          - latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install Vim
+        run: sudo apt-get update && sudo apt-get install -y vim
+
+      - name: Verify Vim capabilities
+        run: node scripts/vim-version.js
+
+      - name: Report Yarn version
+        run: yarn --version
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install matrix Prettier
+        run: npm install --prefix "$RUNNER_TEMP/prettier-${{ matrix.prettier-version }}" "prettier@${{ matrix.prettier-version }}"
+
+      - name: Run core formatting fixtures with matrix Prettier
+        run: yarn test:formatting:core:exec
+        env:
+          PRETTIER_EXEC_CMD_PATH: ${{ runner.temp }}/prettier-${{ matrix.prettier-version }}/node_modules/.bin/prettier

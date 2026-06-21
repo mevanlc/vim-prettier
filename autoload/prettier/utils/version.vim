@@ -2,10 +2,10 @@
 " arguments are the same version, or returns -1 if the first argument is the
 " lesser version.
 function! prettier#utils#version#Compare_versions(a, b) abort
-  let [l:a_major, l:a_minor, l:a_patch; l:rest] = a:a->split('\D')
-          \ ->map('str2nr(v:val)')
-  let [l:b_major, l:b_minor, l:b_patch; l:rest] = a:b->split('\D')
-          \ ->map('str2nr(v:val)')
+  let [l:a_major, l:a_minor, l:a_patch; l:rest] = map(
+          \ split(a:a, '\D'), 'str2nr(v:val)')
+  let [l:b_major, l:b_minor, l:b_patch; l:rest] = map(
+          \ split(a:b, '\D'), 'str2nr(v:val)')
   let l:is_a_greater =
           \ l:a_major > l:b_major
           \ || (l:a_major == l:b_major && l:a_minor > l:b_minor)
