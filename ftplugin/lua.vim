@@ -1,3 +1,5 @@
-let b:prettier_ft_default_args = {
-  \ 'parser': 'lua',
-  \ }
+if &filetype =~# '\v<lua>'
+  let b:prettier_ft_default_args = {
+    \ 'parser': 'lua',
+    \ }
+endif

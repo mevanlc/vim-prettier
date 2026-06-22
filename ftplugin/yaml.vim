@@ -1,3 +1,5 @@
-let b:prettier_ft_default_args = {
-  \ 'parser': 'yaml',
-  \ }
+if &filetype =~# '\v<yaml>'
+  let b:prettier_ft_default_args = {
+    \ 'parser': 'yaml',
+    \ }
+endif
