@@ -138,7 +138,7 @@ let g:prettier#config#trailing_comma = get(g:,'prettier#config#trailing_comma', 
 let g:prettier#config#require_pragma=  get(g:, 'prettier#config#require_pragma', 'false')
 
 " synchronous by default
-command! -nargs=? -range=% Prettier call prettier#Prettier(g:prettier#exec_cmd_async, <line1>, <line2>, g:prettier#partial_format)
+command! -nargs=? -range=% Prettier call prettier#Prettier(g:prettier#exec_cmd_async, <line1>, <line2>, g:prettier#partial_format, <q-args> != '' ? {'parser': <q-args>} : {})
 
 " prettier async
 command! -nargs=? -range=% PrettierAsync call prettier#Prettier(1, <line1>, <line2>, g:prettier#partial_format)
