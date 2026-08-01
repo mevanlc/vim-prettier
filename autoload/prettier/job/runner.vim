@@ -13,7 +13,9 @@ function! prettier#job#runner#run(cmd, startSelection, endSelection, async) abor
 endfunction
 
 function! prettier#job#runner#onError(errors) abort
-  call prettier#logging#error#log('PARSING_ERROR')
+  let l:shortMessage = join(a:errors, "\n")
+  let l:shortMessage = strpart(l:shortMessage, 0, 120)
+  call prettier#logging#error#log('PARSING_ERROR', l:shortMessage)
   if g:prettier#quickfix_enabled
     call prettier#bridge#parser#onError(a:errors, g:prettier#quickfix_auto_focus)
   endif
