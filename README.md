@@ -5,20 +5,17 @@ settings.
 
 ---
 
-**NOTE**: If you want to fallback to older version of prettier/vim-prettier please add this to your `.vimrc`:
+**NOTE**: If you want to fallback to older version of prettier/vim-prettier,
+use the `release/0.x` branch and follow that branch's install instructions:
 
 ```vim
-Plug 'prettier/vim-prettier', {
-  \ 'do': 'yarn install --frozen-lockfile --production',
-  \ 'branch': 'release/0.x'
-  \ }
+Plug 'prettier/vim-prettier', { 'branch': 'release/0.x' }
 ```
 
 ---
 
-By default it will auto format **javascript**, **typescript**, **less**,
-**scss**, **css**, **json**, **graphql** and **markdown** files if they
-have/support the "@format" pragma annotation in the header of the file.
+By default it will auto format configured filetype patterns if they have/support
+the "@format" pragma annotation in the header of the file.
 
 ![vim-prettier](/media/vim-prettier.gif?raw=true 'vim-prettier')
 
@@ -36,21 +33,21 @@ git clone https://github.com/prettier/vim-prettier ~/.vim/pack/plugins/start/vim
 packloadall
 ```
 
-Install with [vim-plug](https://github.com/junegunn/vim-plug), assumes node and
-yarn|npm installed globally.
+Install with [vim-plug](https://github.com/junegunn/vim-plug), assumes Node.js
+and npm are installed globally.
 
 ```vim
-" post install (yarn install | npm install) then load plugin only for editing supported files
+" post install with npm, then load plugin only for selected filetypes
 Plug 'prettier/vim-prettier', {
-  \ 'do': 'yarn install --frozen-lockfile --production',
-  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'svelte', 'yaml', 'html'] }
+  \ 'do': 'npm install --omit=dev',
+  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html', 'php', 'xml'] }
 ```
 
-or simply enable for all formats by:
+or load vim-prettier for every filetype by:
 
 ```vim
-" post install (yarn install | npm install) then load plugin only for editing supported files
-Plug 'prettier/vim-prettier', { 'do': 'yarn install --frozen-lockfile --production' }
+" post install with npm, then load plugin for every filetype
+Plug 'prettier/vim-prettier', { 'do': 'npm install --omit=dev' }
 ```
 
 For those using [vim-pathogen](https://github.com/tpope/vim-pathogen), you can run the following in a terminal:
@@ -63,12 +60,12 @@ git clone https://github.com/prettier/vim-prettier
 If using [dein](https://github.com/Shougo/dein.vim), add the following to your dein config:
 
 ```vim
-call dein#add('prettier/vim-prettier', {'build': 'npm install'})
+call dein#add('prettier/vim-prettier', {'build': 'npm install --omit=dev'})
 ```
 
 If using other vim plugin managers or doing manual setup make sure to have
-`prettier` installed globally or go to your vim-prettier directory and either do
-`npm install` or `yarn install --frozen-lockfile`
+`prettier` installed globally or go to your vim-prettier directory and run
+`npm install --omit=dev`.
 
 ### Prettier Executable resolution
 
@@ -78,9 +75,51 @@ vim-prettier.
 vim-prettier executable resolution:
 
 1.  Look for user defined prettier cli path from vim configuration file
-2.  Traverse parents and search for Prettier installation inside `node_modules`
+2.  Traverse the current buffer's parents and search for Prettier installation inside `node_modules`
 3.  Look for a global prettier installation
 4.  Use locally installed vim-prettier prettier executable
+
+### Compatibility status
+
+The 2.0.0 beta support policy is based on tested fixtures. Project-local
+Prettier, configuration, and plugins take precedence over vim-prettier's bundled
+fallback.
+
+Tested editors are Vim 8.2 latest patch, latest stable Vim, Neovim 0.9 latest
+patch, and latest stable Neovim. Formatting fixtures cover core Prettier
+languages with the bundled Prettier baseline, Prettier 2.8.8, and latest
+Prettier.
+
+User installs are tested with Node.js 20.x and `npm install --omit=dev`.
+Development and CI use the checked-in Yarn v1 lockfile with
+`yarn install --frozen-lockfile` for reproducible test runs.
+
+The root `Dockerfile` is deprecated and kept only for historical reference. It
+uses Alpine 3.8, an unpinned `testbed/vim:latest` base image, and legacy editor
+versions; it is not an authoritative compatibility environment.
+
+For local editor-matrix smoke checks, use the pinned Docker runner:
+
+```sh
+yarn test:editors:docker
+```
+
+To run one target, use:
+
+```sh
+scripts/docker-editor-matrix.sh vim-8.2
+scripts/docker-editor-matrix.sh vim-stable
+scripts/docker-editor-matrix.sh nvim-0.9
+scripts/docker-editor-matrix.sh nvim-stable
+```
+
+The Docker runner defaults to `linux/amd64` so Neovim release archives are
+available consistently. Neovim targets currently assume x86_64 release archives;
+do not override `DOCKER_PLATFORM` for Neovim unless the Dockerfile is updated to
+select a matching asset. Override `VIM_STABLE_VERSION` to test a newer stable Vim
+tag. Override `DOCKER_MATRIX_COMMAND` to run a different command inside the
+matrix image. The checkout is mounted read-write, but `node_modules` and Yarn
+cache are isolated in Docker volumes.
 
 ### Prettier Stylelint
 
@@ -183,16 +222,35 @@ let g:prettier#autoformat = 1
 let g:prettier#autoformat_require_pragma = 0
 ```
 
-Toggle the `g:prettier#autoformat` setting based on whether a config file can be found in the current directory or any parent directory. Note that this will override the `g:prettier#autoformat` setting!
+Toggle the `g:prettier#autoformat` setting based on whether a config file can be found in the buffer's directory or any parent directory. Note that this will override the `g:prettier#autoformat` setting!
 
 ```vim
 let g:prettier#autoformat_config_present = 1
 ```
 
-A list containing all config file names to search for when using the `g:prettier#autoformat_config_present` option.
+A list containing all config file names to search from the buffer's directory and parent directories when using the `g:prettier#autoformat_config_present` option. The default list follows Prettier's documented file-based config names and keeps vim-prettier's legacy `.prettierrc.config.js` entry. It intentionally does not include `package.json` or `package.yaml`, because those files only count as Prettier configs when they contain a `prettier` key. Detection only controls whether autoformat runs; the selected Prettier executable and Node version still determine whether a detected config format can be parsed.
 
 ```vim
-let g:prettier#autoformat_config_files = [...]
+let g:prettier#autoformat_config_files = [
+      \ '.prettierrc',
+      \ '.prettierrc.json',
+      \ '.prettierrc.yaml',
+      \ '.prettierrc.yml',
+      \ '.prettierrc.json5',
+      \ '.prettierrc.js',
+      \ '.prettierrc.mjs',
+      \ '.prettierrc.cjs',
+      \ '.prettierrc.ts',
+      \ '.prettierrc.mts',
+      \ '.prettierrc.cts',
+      \ 'prettier.config.js',
+      \ 'prettier.config.mjs',
+      \ 'prettier.config.cjs',
+      \ 'prettier.config.ts',
+      \ 'prettier.config.mts',
+      \ 'prettier.config.cts',
+      \ '.prettierrc.toml',
+      \ '.prettierrc.config.js']
 ```
 
 Set the prettier CLI executable path
@@ -232,7 +290,7 @@ To run vim-prettier not only before saving, but also after changing text or leav
 " when running at every change you may want to disable quickfix
 let g:prettier#quickfix_enabled = 0
 
-autocmd TextChanged,InsertLeave *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md,*.vue,*.svelte,*.yaml,*.html PrettierAsync
+autocmd TextChanged,InsertLeave *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md,*.vue,*.yaml,*.html,*.php,*.xml PrettierAsync
 ```
 
 ### Overwrite default prettier configuration
@@ -260,6 +318,11 @@ let g:prettier#config#use_tabs = 'auto'
 " default: ''
 let g:prettier#config#parser = ''
 
+" Prettier plugin paths to load. Accepts a string or list of strings.
+" Project-local Prettier installs should provide their own project-local plugins.
+" default: []
+let g:prettier#config#plugins = []
+
 " cli-override|file-override|prefer-file
 " default: 'file-override'
 let g:prettier#config#config_precedence = 'file-override'
@@ -284,4 +347,8 @@ let g:prettier#config#end_of_line = get(g:, 'prettier#config#end_of_line', 'lf')
 
 ### REQUIREMENT(S)
 
-If the `prettier` executable can't be found by Vim, no code formatting will happen
+If the `prettier` executable can't be found by Vim, no code formatting will happen.
+
+For normal use, install dependencies with Node.js 20.x and
+`npm install --omit=dev`. For development and compatibility verification, use
+`yarn install --frozen-lockfile` so the checked-in Yarn v1 lockfile is respected.

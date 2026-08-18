@@ -4,9 +4,10 @@ let s:isLegacyVim = v:version < 800
 let s:isNeoVim = has('nvim')
 let s:isAsyncVim = !s:isLegacyVim && exists('*job_start')
 
-function! prettier#job#runner#run(cmd, startSelection, endSelection, async) abort
+function! prettier#job#runner#run(cmd, startSelection, endSelection, async, ...) abort
+    let l:write = a:0 > 0 ? a:1 : 0
     if a:async && (s:isAsyncVim || s:isNeoVim)
-      call s:asyncFormat(a:cmd, a:startSelection, a:endSelection)
+      call s:asyncFormat(a:cmd, a:startSelection, a:endSelection, l:write)
     else
       call s:format(a:cmd, a:startSelection, a:endSelection)
     endif
@@ -21,21 +22,17 @@ function! prettier#job#runner#onError(errors) abort
   endif
 endfunction
 
-function! s:asyncFormat(cmd, startSelection, endSelection) abort
+function! s:asyncFormat(cmd, startSelection, endSelection, write) abort
     if !s:isAsyncVim && !s:isNeoVim 
       call s:format(a:cmd, a:startSelection, a:endSelection)
     endif 
 
-    " required for Windows support on async operations 
-    let l:cmd = a:cmd
-    if has('win32') || has('win64')
-      let l:cmd = 'cmd.exe /c ' . a:cmd
-    endif
+    let l:cmd = s:job_command(a:cmd)
 
     if s:isAsyncVim
-      call prettier#job#async#vim#run(l:cmd, a:startSelection, a:endSelection)
+      call prettier#job#async#vim#run(l:cmd, a:startSelection, a:endSelection, a:write)
     else
-      call prettier#job#async#neovim#run(l:cmd, a:startSelection, a:endSelection)
+      call prettier#job#async#neovim#run(l:cmd, a:startSelection, a:endSelection, a:write)
     endif
 endfunction
 
@@ -47,7 +44,7 @@ function! s:format(cmd, startSelection, endSelection) abort
 
   " TODO
   " since we are using two different types for system, maybe we should move it to utils shims
-  let l:out = split(system(a:cmd, l:bufferLines), '\n')
+  let l:out = split(system(s:system_command(a:cmd), l:bufferLines), '\n')
 
   " check system exit code
   if v:shell_error
@@ -62,4 +59,24 @@ function! s:format(cmd, startSelection, endSelection) abort
   endif
 
   call prettier#utils#buffer#replace(l:out, a:startSelection, a:endSelection)
+endfunction
+
+function! s:system_command(cmd) abort
+  if type(a:cmd) == type({})
+    return a:cmd.shell
+  endif
+
+  return a:cmd
+endfunction
+
+function! s:job_command(cmd) abort
+  if type(a:cmd) == type({})
+    return a:cmd.argv
+  endif
+
+  if has('win32') || has('win64')
+    return 'cmd.exe /c ' . a:cmd
+  endif
+
+  return a:cmd
 endfunction

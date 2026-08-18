@@ -9,12 +9,26 @@ function! prettier#resolver#config#resolve(config, hasSelection, start, end) abo
           \ 'start': a:start,
           \ 'end': a:end}
 
-  let l:cmd = ' ' . s:Get_current_version_flags(s:FLAGS)
-          \ ->map(function('s:Map_flag_to_cmd_part', [l:config_and_sel]))
-          \ ->values()
-          \ ->join(' ')
+  let l:cmd = ' ' . join(values(map(
+          \ s:Get_current_version_flags(s:FLAGS),
+          \ function('s:Map_flag_to_cmd_part', [l:config_and_sel]))), ' ')
 
   return l:cmd
+endfunction
+
+function! prettier#resolver#config#resolve_args(config, hasSelection, start, end) abort
+  let l:config_and_sel = {
+          \ 'config': a:config,
+          \ 'hasSelection': a:hasSelection,
+          \ 'start': a:start,
+          \ 'end': a:end}
+
+  let l:args = []
+  for [l:flag, l:props] in items(s:Get_current_version_flags(s:FLAGS))
+    call extend(l:args, s:Map_flag_to_args_part(l:config_and_sel, l:flag, l:props))
+  endfor
+
+  return filter(l:args, 'v:val !=# ""')
 endfunction
 
 " Mapper functions: {{{
@@ -106,11 +120,21 @@ function! s:Flag_parser(config_and_sel, ...) abort
   endif
 endfunction
 
+" Returns repeated '--plugin=PLUGIN' args or ''.
+function! s:Flag_plugins(config_and_sel, ...) abort
+  let l:flags = []
+  for l:plugin in s:Get_plugins(a:config_and_sel)
+      call add(l:flags, '--plugin=' . shellescape(l:plugin))
+  endfor
+
+  return join(l:flags, ' ')
+endfunction
+
 " Returns '--stdin-filepath=' concatenated with the full path of the opened
 " file.
 function! s:Flag_stdin_filepath(...) abort
   let l:current_file = simplify(expand('%:p'))
-  return '--stdin-filepath="' . l:current_file . '"'
+  return '--stdin-filepath=' . shellescape(l:current_file)
 endfunction
 
 " Returns '--loglevel error' or '--log-level error'.
@@ -127,7 +151,7 @@ endfunction
 " Returns a flag name concantenated with its value in the JSON config object or
 " in the default global Prettier config.
 function! s:Concat_value_to_flag(config_and_sel, flag, props) abort
-  let l:global_value = get(g:, 'prettier#config#' . a:props.global_name, "")
+  let l:global_value = get(g:, 'prettier#config#' . a:props.global_name, '')
 
   let l:value = get(a:config_and_sel.config, a:props.json_name, l:global_value)
 
@@ -137,6 +161,53 @@ endfunction
 " Maps a flag name to a part of a command.
 function! s:Map_flag_to_cmd_part(config_and_sel, flag, props) abort
   return a:props.mapper(a:config_and_sel, a:flag, a:props)
+endfunction
+
+function! s:Map_flag_to_args_part(config_and_sel, flag, props) abort
+  if a:flag ==# '--plugin'
+    return map(s:Get_plugins(a:config_and_sel), '"--plugin=" . v:val')
+  endif
+
+  if a:flag ==# '--stdin-filepath'
+    return ['--stdin-filepath=' . simplify(expand('%:p'))]
+  endif
+
+  let l:part = trim(a:props.mapper(a:config_and_sel, a:flag, a:props))
+  if l:part ==# ''
+    return []
+  endif
+
+  return split(l:part)
+endfunction
+
+function! s:Get_plugins(config_and_sel) abort
+  let l:value = get(
+          \ a:config_and_sel.config,
+          \ 'plugins',
+          \ get(g:, 'prettier#config#plugins', []))
+
+  if type(l:value) == type('')
+    let l:plugins = l:value ==# '' ? [] : [l:value]
+  elseif type(l:value) == type([])
+    let l:plugins = copy(l:value)
+  else
+    return []
+  endif
+
+  if prettier#resolver#executable#isUnderPluginRoot(
+          \ prettier#resolver#executable#getPath())
+    let l:bundled_value = get(a:config_and_sel.config, 'bundledPlugins', [])
+
+    if type(l:bundled_value) == type('')
+      if l:bundled_value !=# ''
+        call add(l:plugins, l:bundled_value)
+      endif
+    elseif type(l:bundled_value) == type([])
+      call extend(l:plugins, l:bundled_value)
+    endif
+  endif
+
+  return filter(l:plugins, 'type(v:val) == type("") && v:val !=# ""')
 endfunction
 " }}}
 
@@ -160,6 +231,11 @@ let s:FLAGS = {
         \   'json_name': 'parser',
         \   'global_name': 'parser',
         \   'mapper': function('s:Flag_parser')},
+        \ '--plugin': {
+        \   'json_name': 'plugins',
+        \   'global_name': 'plugins',
+        \   'mapper': function('s:Flag_plugins'),
+        \   'since': '1.10.0'},
         \ '--range-start': {
         \   'json_name': '',
         \   'global_name': '',
@@ -250,16 +326,19 @@ let s:FLAGS = {
 function! s:Trim_internal_unprintable(text) abort
   let l:char_patt = '\%(\%(\^\m.\)\|\%(<\x\x>\)\)\{}'
   let l:patt_at_ends = '^' . l:char_patt . '\|' . l:char_patt . '$'
-  let l:trimmed_text = a:text->substitute(l:patt_at_ends, '', 'g')
+  let l:trimmed_text = substitute(a:text, l:patt_at_ends, '', 'g')
   return l:trimmed_text
 endfunction
 
 " Returns the version of the Prettier CLI as a string.
 function! s:Get_prettier_cli_version() abort
-  let l:output = ''
-  redir => l:output
-    silent call prettier#PrettierCli('--version')
-  redir END
+  let l:execCmd = prettier#resolver#executable#getPath()
+  if l:execCmd == -1
+    call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
+    return ''
+  endif
+
+  let l:output = system(shellescape(l:execCmd) . ' --version')
   " The shell sends the string with whitespaces at both ends.
   let l:prettier_cli_version = s:Trim_internal_unprintable(trim(l:output))
   return l:prettier_cli_version
@@ -293,14 +372,14 @@ function! s:Get_current_version_flags(flags) abort
           \ && exists('b:prettier_last_used_cli_version')
           \ && b:prettier_last_used_cli_version ==# l:prettier_version
   if l:is_cached
-    return b:prettier_cached_flags->copy()
+    return copy(b:prettier_cached_flags)
   endif
 
-  let l:compatible_flags = a:flags->copy()->filter(
+  let l:compatible_flags = filter(copy(a:flags),
           \ function('s:Filter_uncompatible_flag', [l:prettier_version]))
   let b:prettier_cached_flags = l:compatible_flags
   let b:prettier_last_used_cli_version = l:prettier_version
-  return l:compatible_flags->copy()
+  return copy(l:compatible_flags)
 endfunction
 " }}}
 

@@ -102,23 +102,23 @@ function! s:Run_tests() abort
           \ function('s:Test_is_greater_or_equal_version_lesser_case'),
           \ function('s:Test_is_greater_or_equal_version_equal_case')]
 
-  let l:results_as_returned = l:test_functions->copy()->map('v:val()')
-  let l:results_as_text = l:results_as_returned
-          \ ->copy()
-          \ ->map('v:key + 1 .. '': '' .. (v:val ? "failed" : "passed")')
+  let l:results_as_returned = map(copy(l:test_functions), 'v:val()')
+  let l:results_as_text = map(
+          \ copy(l:results_as_returned),
+          \ 'string(v:key + 1) . '': '' . (v:val ? ''failed'' : ''passed'')')
 
-  let l:has_failed_test = v:errors->len() > 0
-          \ || l:results_as_returned->index(1) >= 0
+  let l:has_failed_test = len(v:errors) > 0
+          \ || index(l:results_as_returned, 1) >= 0
   if l:has_failed_test
     echoerr 'The tests failed.'
     echoerr 'Results:'
-    echoerr l:results_as_text->join('; ')
+    echoerr join(l:results_as_text, '; ')
     echoerr 'Errors:'
-    echoerr v:errors->join('; ')
+    echoerr join(v:errors, '; ')
   else
     echomsg 'The tests were completed successfully.'
     echomsg 'Results:'
-    echomsg l:results_as_text->join('; ')
+    echomsg join(l:results_as_text, '; ')
   endif
 endfunction
 

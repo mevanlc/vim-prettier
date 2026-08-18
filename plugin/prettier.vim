@@ -5,7 +5,7 @@
 " Name Of File: prettier.vim
 "  Description: A vim plugin wrapper for prettier, pre-configured with custom default prettier settings.
 "   Maintainer: Mitermayer Reis <mitermayer.reis at gmail.com>
-"      Version: 1.0.0
+"      Version: 2.0.0-beta.1
 "        Usage: Use :help vim-prettier-usage, or visit https://github.com/prettier/vim-prettier
 "
 "==========================================================================================================
@@ -26,15 +26,27 @@ let g:prettier#autoformat_require_pragma = get(g:, 'prettier#autoformat_require_
 " whether to turn autoformatting on if a prettier config file is found
 let g:prettier#autoformat_config_present = get(g:, 'prettier#autoformat_config_present', 0)
 
-" prettier config files to search current directory and parent directories for
+" prettier config files to search buffer directory and parent directories for
 let g:prettier#autoformat_config_files = get(g:, 'prettier#autoformat_config_files', [
       \'.prettierrc',
-      \'.prettierrc.yml',
-      \'.prettierrc.yaml',
-      \'.prettierrc.js',
-      \'.prettierrc.config.js',
       \'.prettierrc.json',
-      \'.prettierrc.toml'])
+      \'.prettierrc.yaml',
+      \'.prettierrc.yml',
+      \'.prettierrc.json5',
+      \'.prettierrc.js',
+      \'.prettierrc.mjs',
+      \'.prettierrc.cjs',
+      \'.prettierrc.ts',
+      \'.prettierrc.mts',
+      \'.prettierrc.cts',
+      \'prettier.config.js',
+      \'prettier.config.mjs',
+      \'prettier.config.cjs',
+      \'prettier.config.ts',
+      \'prettier.config.mts',
+      \'prettier.config.cts',
+      \'.prettierrc.toml',
+      \'.prettierrc.config.js'])
 
 " path to prettier cli
 let g:prettier#exec_cmd_path = get(g:, 'prettier#exec_cmd_path', 0)
@@ -78,6 +90,9 @@ let g:prettier#config#use_tabs = get(g:,'prettier#config#use_tabs', 'auto')
 " default: ''
 " See more: https://prettier.io/docs/en/options.html#parser
 let g:prettier#config#parser = get(g:,'prettier#config#parser', '')
+
+" Prettier plugin paths to load. Accepts a string or list of strings.
+let g:prettier#config#plugins = get(g:, 'prettier#config#plugins', [])
 
 " cli-override|file-override|prefer-file
 " default: 'file-override'
@@ -144,7 +159,7 @@ command! -nargs=? -range=% Prettier call prettier#Prettier(g:prettier#exec_cmd_a
 command! -nargs=? -range=% PrettierAsync call prettier#Prettier(1, <line1>, <line2>, g:prettier#partial_format)
 
 " prints vim-prettier version
-command! -nargs=? -range=% PrettierVersion echom '1.0.0'
+command! -nargs=? -range=% PrettierVersion echom '2.0.0-beta.1'
 
 " call prettier cli
 command! -nargs=? -range=% PrettierCli call prettier#PrettierCli(<q-args>)

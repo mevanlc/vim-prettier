@@ -5,7 +5,7 @@
 " Name Of File: prettier.vim
 "  Description: A vim plugin wrapper for prettier, pre-configured with custom default prettier settings.
 "   Maintainer: Mitermayer Reis <mitermayer.reis at gmail.com>
-"      Version: 1.0.0
+"      Version: 2.0.0-beta.1
 "        Usage: Use :help vim-prettier-usage, or visit https://github.com/prettier/vim-prettier
 "
 "==========================================================================================================
@@ -27,7 +27,7 @@ function! prettier#PrettierCli(user_input) abort
   let l:execCmd = prettier#resolver#executable#getPath()
 
   if l:execCmd != -1
-    let l:out = system(l:execCmd. ' ' . a:user_input)
+    let l:out = system(shellescape(l:execCmd) . ' ' . a:user_input)
     echom l:out
   else
     call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
@@ -43,7 +43,7 @@ function! prettier#Autoformat(...) abort
   if l:autoformat
     call prettier#Prettier(1, 1, line('$'), 0, {
       \ 'requirePragma': g:prettier#autoformat_require_pragma ? 'true' : 'false'
-      \ })
+      \ }, {'write': 1})
   endif
 endfunction
 
@@ -58,17 +58,20 @@ function! prettier#Prettier(...) abort
   let l:partialFormatEnabled = l:hasSelection && l:partialFormat
 
   let l:overWrite = a:0 > 4 ? a:5 : {}
+  let l:options = a:0 > 5 ? a:6 : {}
+  let l:write = get(l:options, 'write', 0)
   let l:bufferConfig = getbufvar(bufnr('%'), 'prettier_ft_default_args', {})
-  let l:config = extend(l:bufferConfig, l:overWrite)
+  let l:config = extend(copy(l:bufferConfig), l:overWrite)
 
   if l:execCmd != -1
     " TODO
     " => we should make sure we can resolve --range-start  and --range-end when required
     "    => when the above is required we should also update l:startSelection to '1' and l:endSelection to line('$')
-    let l:cmd = l:execCmd . prettier#resolver#config#resolve(
+    let l:cmd = prettier#command#build(
+          \ l:execCmd,
           \ prettier#resolver#preset#resolve(l:config),
           \ l:partialFormatEnabled,
-          \ l:startSelection, 
+          \ l:startSelection,
           \ l:endSelection)
 
     " close quickfix if it is opened
@@ -81,7 +84,7 @@ function! prettier#Prettier(...) abort
     endif
 
     " format buffer
-    call prettier#job#runner#run(l:cmd, l:startSelection, l:endSelection, l:async)
+    call prettier#job#runner#run(l:cmd, l:startSelection, l:endSelection, l:async, l:write)
   else
     call prettier#logging#error#log('EXECUTABLE_NOT_FOUND_ERROR')
   endif
